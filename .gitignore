@@ -30,4 +30,5 @@ src/main/resources/db.properties
 target/
 nbactions.xml
 
+# IntelliJ
 .idea/
