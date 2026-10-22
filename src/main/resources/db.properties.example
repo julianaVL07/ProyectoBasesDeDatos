@@ -1,0 +1,14 @@
+# ============================================================
+# Plantilla de configuración de la conexión a Oracle.
+#
+# 1. Copia este archivo como "db.properties" (en esta misma carpeta).
+# 2. Cambia usuario y contraseña por los tuyos.
+# "db.properties" está en .gitignore: NO se sube a GitHub.
+# ============================================================
+
+# Oracle XE 21c:        jdbc:oracle:thin:@//localhost:1521/XEPDB1
+# Oracle Free 23ai:     jdbc:oracle:thin:@//localhost:1521/FREEPDB1
+# Oracle XE 11g (viejo): jdbc:oracle:thin:@localhost:1521:XE
+db.url=jdbc:oracle:thin:@//localhost:1521/XEPDB1
+db.user=PROYECTO_BD
+db.password=cambiar_esta_clave

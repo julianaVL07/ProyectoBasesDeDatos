@@ -5,9 +5,24 @@
     <artifactId>ProyectoBasesDeDatos</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.release>26</maven.compiler.release>
+        <!-- Debe coincidir con el JDK instalado (JDK 25). -->
+        <maven.compiler.release>25</maven.compiler.release>
         <exec.mainClass>co.edu.uniquindio.proyectobasesdedatos.ProyectoBasesDeDatos</exec.mainClass>
     </properties>
+
+    <dependencies>
+        <!--
+            Driver JDBC oficial de Oracle (JDBC puro, NO es un framework).
+            ojdbc11 es la versión para JDK 11 o superior (sirve para JDK 25).
+            Está publicado en Maven Central, no hay que descargarlo a mano.
+        -->
+        <dependency>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc11</artifactId>
+            <version>23.9.0.25.07</version>
+        </dependency>
+    </dependencies>
 </project>
