@@ -272,4 +272,22 @@ INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
 SELECT 14, ROUND(pr.PrPrecioBase * 1.09, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
  WHERE p.PNit = '900890123-8' AND pr.PrNombre = 'Martillo de uña 16 oz';
 
+-- ============================ USUARIOS ==================================
+-- Uno por cada rol que no es administrador (el admin ya existe y es único).
+-- La clave se guarda como SHA-256 en hexadecimal minúscula, igual que util/Seguridad.java.
+--   tradicional / Trad123*  -> rol 2 (TRADICIONAL): CRUD + consultas y reportes
+--   esporadico  / Espo123*  -> rol 3 (ESPORADICO):  solo consultas y reportes
+
+INSERT INTO TUsuario (UNombreUsuario, UContrasena, UNombreCompleto, RCodigo)
+VALUES ('tradicional',
+        LOWER(RAWTOHEX(STANDARD_HASH('Trad123*', 'SHA256'))),
+        'Usuario Tradicional de Prueba',
+        2);
+
+INSERT INTO TUsuario (UNombreUsuario, UContrasena, UNombreCompleto, RCodigo)
+VALUES ('esporadico',
+        LOWER(RAWTOHEX(STANDARD_HASH('Espo123*', 'SHA256'))),
+        'Usuario Esporádico de Prueba',
+        3);
+
 COMMIT;
