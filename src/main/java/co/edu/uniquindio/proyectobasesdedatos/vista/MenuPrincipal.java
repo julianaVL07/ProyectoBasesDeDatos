@@ -3,6 +3,7 @@ package co.edu.uniquindio.proyectobasesdedatos.vista;
 import co.edu.uniquindio.proyectobasesdedatos.modelo.dto.RolDTO;
 import co.edu.uniquindio.proyectobasesdedatos.modelo.dto.UsuarioDTO;
 import co.edu.uniquindio.proyectobasesdedatos.util.Sesion;
+import co.edu.uniquindio.proyectobasesdedatos.vista.consultas.VentanaConsultas;
 import co.edu.uniquindio.proyectobasesdedatos.vista.util.UtilVista;
 
 import javax.swing.BorderFactory;
@@ -102,8 +103,7 @@ public class MenuPrincipal extends JFrame {
 
     private JMenu crearMenuReportes() {
         JMenu menu = new JMenu("Reportes/Consultas");
-        // TODO Juliana: abrir la ventana de Consultas.
-        menu.add(crearItem("Consultas", this::enConstruccion));
+        menu.add(crearItem("Consultas", () -> abrirVentana(new VentanaConsultas())));
         // TODO Sara: abrir la ventana de Reportes (Fase 5).
         menu.add(crearItem("Reportes", this::enConstruccion));
         return menu;
