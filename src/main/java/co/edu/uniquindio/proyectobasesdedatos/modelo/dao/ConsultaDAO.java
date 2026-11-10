@@ -90,6 +90,55 @@ public class ConsultaDAO {
                 "Categoría", "Producto", "Stock", "Proveedor", "Días de entrega");
     }
 
+    // ============================================================ Subconsultas
+
+    /**
+     * (d) Subconsulta correlacionada: productos cuyo precio base supera el
+     * promedio de su propia categoría.
+     *
+     * <p>Para cada producto {@code pr}, la subconsulta del WHERE calcula el
+     * promedio de TProducto filtrando por la misma categoría
+     * ({@code p2.CaCodigo = pr.CaCodigo}). En el SELECT se repite como
+     * subconsulta escalar para mostrar ese promedio redondeado a 2 decimales.
+     * El JOIN con TCategoria trae el nombre de la categoría.</p>
+     */
+    private static final String SQL_PRODUCTOS_SOBRE_PROMEDIO =
+            "SELECT ca.CaNombre, pr.PrNombre, pr.PrPrecioBase, "
+            + "(SELECT ROUND(AVG(p3.PrPrecioBase), 2) FROM TProducto p3 "
+            + " WHERE p3.CaCodigo = pr.CaCodigo) AS PromedioCategoria "
+            + "FROM TProducto pr "
+            + "JOIN TCategoria ca ON ca.CaCodigo = pr.CaCodigo "
+            + "WHERE pr.PrPrecioBase > (SELECT AVG(p2.PrPrecioBase) FROM TProducto p2 "
+            + " WHERE p2.CaCodigo = pr.CaCodigo) "
+            + "ORDER BY ca.CaNombre, pr.PrPrecioBase DESC";
+
+    /**
+     * (e) Subconsulta con NOT EXISTS: proveedores que todavía no suministran
+     * ningún producto.
+     *
+     * <p>Para cada proveedor se busca en TSuministro alguna fila con su PCodigo;
+     * si no existe ninguna, el proveedor aparece en el resultado. Sirve para
+     * detectar proveedores registrados a los que falta asignarles productos.</p>
+     */
+    private static final String SQL_PROVEEDORES_SIN_SUMINISTROS =
+            "SELECT p.PNit, p.PNombre, p.PTelefono, p.PCorreo, "
+            + "CASE p.PActivo WHEN 1 THEN 'Sí' ELSE 'No' END AS Activo "
+            + "FROM TProveedor p "
+            + "WHERE NOT EXISTS (SELECT 1 FROM TSuministro s WHERE s.PCodigo = p.PCodigo) "
+            + "ORDER BY p.PNombre";
+
+    /** (d) Productos con precio base mayor al promedio de su categoría. */
+    public ResultadoConsulta productosSobrePromedioCategoria() throws SQLException {
+        return ejecutar(SQL_PRODUCTOS_SOBRE_PROMEDIO,
+                "Categoría", "Producto", "Precio base", "Promedio de la categoría");
+    }
+
+    /** (e) Proveedores que no tienen ningún suministro registrado. */
+    public ResultadoConsulta proveedoresSinSuministros() throws SQLException {
+        return ejecutar(SQL_PROVEEDORES_SIN_SUMINISTROS,
+                "NIT", "Proveedor", "Teléfono", "Correo", "Activo");
+    }
+
     // ------------------------------------------------------- Apoyo interno
 
     /**
