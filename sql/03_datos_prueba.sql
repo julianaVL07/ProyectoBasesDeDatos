@@ -102,4 +102,174 @@ SELECT 'Cinta métrica 5 m', 'Flexómetro con freno', 19900, 30, CaCodigo FROM T
 INSERT INTO TProducto (PrNombre, PrDescripcion, PrPrecioBase, PrStock, CaCodigo)
 SELECT 'Taladro percutor 1/2 pulgada', 'Taladro eléctrico de 650 W', 289000, 6, CaCodigo FROM TCategoria WHERE CaNombre = 'Ferretería';
 
+-- ============================ PROVEEDORES ===============================
+-- 9 proveedores en 8 departamentos. La ciudad se busca por nombre Y
+-- departamento (los nombres de ciudad no son únicos en el modelo).
+--   * 'Aseo Total Caldas' e 'Importadora del Oriente' NO tienen suministros
+--     (consulta "proveedores sin suministros").
+--   * 'Alimentos La Sabana' está INACTIVO (PActivo = 0) pero sí tiene
+--     suministros: sirve para probar que no se puede eliminar (ORA-02292).
+
+INSERT INTO TProveedor (PNit, PNombre, PDireccion, PCorreo, PTelefono, PActivo, CCodigo)
+SELECT '900123456-7', 'Distribuidora del Quindío S.A.S.', 'Calle 21 # 15-30', 'ventas@distquindio.com.co', '6067451200', 1, c.CCodigo
+  FROM TCiudad c JOIN TDepartamento d ON d.DCodigo = c.DCodigo
+ WHERE c.CNombre = 'Armenia' AND d.DNombre = 'Quindío';
+
+INSERT INTO TProveedor (PNit, PNombre, PDireccion, PCorreo, PTelefono, PActivo, CCodigo)
+SELECT '900234567-1', 'Suministros Andinos Ltda.', 'Avenida 6N # 23-45', 'contacto@suministrosandinos.co', '6023856700', 1, c.CCodigo
+  FROM TCiudad c JOIN TDepartamento d ON d.DCodigo = c.DCodigo
+ WHERE c.CNombre = 'Cali' AND d.DNombre = 'Valle del Cauca';
+
+INSERT INTO TProveedor (PNit, PNombre, PDireccion, PCorreo, PTelefono, PActivo, CCodigo)
+SELECT '900345678-2', 'Comercializadora Paisa S.A.S.', 'Carrera 43A # 10-50', 'pedidos@compaisa.com.co', '6044448899', 1, c.CCodigo
+  FROM TCiudad c JOIN TDepartamento d ON d.DCodigo = c.DCodigo
+ WHERE c.CNombre = 'Medellín' AND d.DNombre = 'Antioquia';
+
+INSERT INTO TProveedor (PNit, PNombre, PDireccion, PCorreo, PTelefono, PActivo, CCodigo)
+SELECT '900456789-3', 'TecnoValle S.A.S.', 'Calle 30 # 28-12', 'soporte@tecnovalle.co', '6022731500', 1, c.CCodigo
+  FROM TCiudad c JOIN TDepartamento d ON d.DCodigo = c.DCodigo
+ WHERE c.CNombre = 'Palmira' AND d.DNombre = 'Valle del Cauca';
+
+INSERT INTO TProveedor (PNit, PNombre, PDireccion, PCorreo, PTelefono, PActivo, CCodigo)
+SELECT '900567890-4', 'Papelería Central Ltda.', 'Carrera 8 # 19-40', 'ventas@papeleriacentral.co', '6063350022', 1, c.CCodigo
+  FROM TCiudad c JOIN TDepartamento d ON d.DCodigo = c.DCodigo
+ WHERE c.CNombre = 'Pereira' AND d.DNombre = 'Risaralda';
+
+INSERT INTO TProveedor (PNit, PNombre, PDireccion, PCorreo, PTelefono, PActivo, CCodigo)
+SELECT '900678901-5', 'Ferretería El Tornillo S.A.S.', 'Calle 36 # 17-25', 'pedidos@eltornillo.com.co', '6076342211', 1, c.CCodigo
+  FROM TCiudad c JOIN TDepartamento d ON d.DCodigo = c.DCodigo
+ WHERE c.CNombre = 'Bucaramanga' AND d.DNombre = 'Santander';
+
+INSERT INTO TProveedor (PNit, PNombre, PDireccion, PCorreo, PTelefono, PActivo, CCodigo)
+SELECT '900789012-6', 'Aseo Total Caldas S.A.S.', 'Avenida Santander # 52-10', 'info@aseototal.co', '6068857400', 1, c.CCodigo
+  FROM TCiudad c JOIN TDepartamento d ON d.DCodigo = c.DCodigo
+ WHERE c.CNombre = 'Manizales' AND d.DNombre = 'Caldas';
+
+INSERT INTO TProveedor (PNit, PNombre, PDireccion, PCorreo, PTelefono, PActivo, CCodigo)
+SELECT '900890123-8', 'Alimentos La Sabana S.A.S.', 'Autopista Sur # 12-80', 'compras@lasabana.com.co', '6017220300', 0, c.CCodigo
+  FROM TCiudad c JOIN TDepartamento d ON d.DCodigo = c.DCodigo
+ WHERE c.CNombre = 'Soacha' AND d.DNombre = 'Cundinamarca';
+
+INSERT INTO TProveedor (PNit, PNombre, PDireccion, PCorreo, PTelefono, PActivo, CCodigo)
+SELECT '900901234-9', 'Importadora del Oriente S.A.S.', 'Carrera 27 # 30-15', 'gerencia@importadoraoriente.co', '6076199800', 1, c.CCodigo
+  FROM TCiudad c JOIN TDepartamento d ON d.DCodigo = c.DCodigo
+ WHERE c.CNombre = 'Floridablanca' AND d.DNombre = 'Santander';
+
+-- ============================ SUMINISTROS ===============================
+-- 32 suministros. El precio de suministro es el precio base del producto
+-- multiplicado por un factor entre 0,87 y 1,13 (dentro de ±15 %), redondeado
+-- a la centena. Días de entrega entre 1 y 15.
+-- Productos con 3 proveedores: Detergente, Resma, Mouse, Café y Martillo.
+-- 'Archivador AZ oficio' no tiene proveedores.
+
+-- Distribuidora del Quindío (900123456-7)
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 2, ROUND(pr.PrPrecioBase * 0.95, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900123456-7' AND pr.PrNombre = 'Detergente en polvo 3 kg';
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 2, ROUND(pr.PrPrecioBase * 1.05, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900123456-7' AND pr.PrNombre = 'Jabón líquido para manos 1 L';
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 2, ROUND(pr.PrPrecioBase * 0.97, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900123456-7' AND pr.PrNombre = 'Escoba de cerdas suaves';
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 3, ROUND(pr.PrPrecioBase * 1.04, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900123456-7' AND pr.PrNombre = 'Resma de papel carta';
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 1, ROUND(pr.PrPrecioBase * 0.92, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900123456-7' AND pr.PrNombre = 'Café molido 500 g';
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 1, ROUND(pr.PrPrecioBase * 1.00, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900123456-7' AND pr.PrNombre = 'Azúcar 1 kg';
+
+-- Suministros Andinos (900234567-1)
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 4, ROUND(pr.PrPrecioBase * 0.90, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900234567-1' AND pr.PrNombre = 'Detergente en polvo 3 kg';
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 5, ROUND(pr.PrPrecioBase * 1.08, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900234567-1' AND pr.PrNombre = 'Desinfectante multiusos 2 L';
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 6, ROUND(pr.PrPrecioBase * 1.10, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900234567-1' AND pr.PrNombre = 'Mouse inalámbrico';
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 3, ROUND(pr.PrPrecioBase * 0.96, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900234567-1' AND pr.PrNombre = 'Galletas surtidas x12';
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 5, ROUND(pr.PrPrecioBase * 1.02, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900234567-1' AND pr.PrNombre = 'Martillo de uña 16 oz';
+
+-- Comercializadora Paisa (900345678-2)
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 7, ROUND(pr.PrPrecioBase * 1.12, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900345678-2' AND pr.PrNombre = 'Detergente en polvo 3 kg';
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 5, ROUND(pr.PrPrecioBase * 1.01, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900345678-2' AND pr.PrNombre = 'Cuaderno argollado 100 hojas';
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 4, ROUND(pr.PrPrecioBase * 0.88, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900345678-2' AND pr.PrNombre = 'Café molido 500 g';
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 3, ROUND(pr.PrPrecioBase * 1.06, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900345678-2' AND pr.PrNombre = 'Agua en botella x24';
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 6, ROUND(pr.PrPrecioBase * 0.93, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900345678-2' AND pr.PrNombre = 'Cinta métrica 5 m';
+
+-- TecnoValle (900456789-3)
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 3, ROUND(pr.PrPrecioBase * 0.90, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900456789-3' AND pr.PrNombre = 'Mouse inalámbrico';
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 3, ROUND(pr.PrPrecioBase * 0.95, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900456789-3' AND pr.PrNombre = 'Teclado USB en español';
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 8, ROUND(pr.PrPrecioBase * 0.98, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900456789-3' AND pr.PrNombre = 'Monitor LED 24 pulgadas';
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 4, ROUND(pr.PrPrecioBase * 1.07, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900456789-3' AND pr.PrNombre = 'Memoria USB 64 GB';
+
+-- Papelería Central (900567890-4)
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 2, ROUND(pr.PrPrecioBase * 0.94, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900567890-4' AND pr.PrNombre = 'Resma de papel carta';
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 2, ROUND(pr.PrPrecioBase * 0.89, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900567890-4' AND pr.PrNombre = 'Cuaderno argollado 100 hojas';
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 2, ROUND(pr.PrPrecioBase * 1.03, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900567890-4' AND pr.PrNombre = 'Caja de bolígrafos x12';
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 10, ROUND(pr.PrPrecioBase * 1.13, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900567890-4' AND pr.PrNombre = 'Mouse inalámbrico';
+
+-- Ferretería El Tornillo (900678901-5)
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 2, ROUND(pr.PrPrecioBase * 0.91, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900678901-5' AND pr.PrNombre = 'Martillo de uña 16 oz';
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 3, ROUND(pr.PrPrecioBase * 1.05, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900678901-5' AND pr.PrNombre = 'Juego de destornilladores x6';
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 2, ROUND(pr.PrPrecioBase * 1.00, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900678901-5' AND pr.PrNombre = 'Cinta métrica 5 m';
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 12, ROUND(pr.PrPrecioBase * 0.96, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900678901-5' AND pr.PrNombre = 'Taladro percutor 1/2 pulgada';
+
+-- Alimentos La Sabana (900890123-8, inactivo)
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 9, ROUND(pr.PrPrecioBase * 1.08, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900890123-8' AND pr.PrNombre = 'Café molido 500 g';
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 7, ROUND(pr.PrPrecioBase * 0.87, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900890123-8' AND pr.PrNombre = 'Galletas surtidas x12';
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 15, ROUND(pr.PrPrecioBase * 1.11, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900890123-8' AND pr.PrNombre = 'Resma de papel carta';
+INSERT INTO TSuministro (SDiasEntrega, SPrecio, PCodigo, PrCodigo)
+SELECT 14, ROUND(pr.PrPrecioBase * 1.09, -2), p.PCodigo, pr.PrCodigo FROM TProveedor p, TProducto pr
+ WHERE p.PNit = '900890123-8' AND pr.PrNombre = 'Martillo de uña 16 oz';
+
 COMMIT;
