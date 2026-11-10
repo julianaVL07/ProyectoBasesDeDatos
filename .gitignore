@@ -32,3 +32,9 @@ nbactions.xml
 
 # IntelliJ
 .idea/
+
+# Contexto local de Claude Code (no se sube)
+.claude/
+
+# Plan de trabajo interno del equipo (se comparte por fuera de git)
+docs/PlanDeTrabajo.md
