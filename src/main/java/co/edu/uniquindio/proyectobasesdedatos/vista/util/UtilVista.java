@@ -5,15 +5,25 @@ import javax.swing.JInternalFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
+import javax.swing.SwingConstants;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.math.BigDecimal;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 
 /**
  * Métodos de apoyo que comparten todas las ventanas (tablas, ventanas internas
  * y mensajes). Solo contiene código de interfaz: nada de SQL.
  */
 public final class UtilVista {
+
+    /** Punto para miles y coma para decimales (formato de Colombia). */
+    private static final DecimalFormatSymbols SIMBOLOS_CO =
+            DecimalFormatSymbols.getInstance(Locale.forLanguageTag("es-CO"));
 
     // Clase de utilidad: no se instancia.
     private UtilVista() {
@@ -51,6 +61,36 @@ public final class UtilVista {
     /** Borra todas las filas de la tabla (deja las columnas). */
     public static void limpiarTabla(DefaultTableModel modelo) {
         modelo.setRowCount(0);
+    }
+
+    /** Alinea a la derecha el contenido de una columna (útil para números). */
+    public static void alinearDerecha(JTable tabla, int columna) {
+        DefaultTableCellRenderer derecha = new DefaultTableCellRenderer();
+        derecha.setHorizontalAlignment(SwingConstants.RIGHT);
+        tabla.getColumnModel().getColumn(columna).setCellRenderer(derecha);
+    }
+
+    // ---------------------------------------------------------------- Números
+
+    /**
+     * Formatea un valor con separador de miles y 2 decimales al estilo
+     * colombiano, p. ej. 28900.5 -> "28.900,50". Devuelve "" si es null.
+     */
+    public static String formatearPrecio(BigDecimal valor) {
+        return valor == null ? "" : new DecimalFormat("#,##0.00", SIMBOLOS_CO).format(valor);
+    }
+
+    /**
+     * Formatea un valor para editarlo en un campo de texto: separador de miles
+     * y decimales solo si los tiene, p. ej. 28900.00 -> "28.900", 28900.5 -> "28.900,5".
+     */
+    public static String formatearParaEditar(BigDecimal valor) {
+        return valor == null ? "" : new DecimalFormat("#,##0.##", SIMBOLOS_CO).format(valor);
+    }
+
+    /** Formatea un entero con separador de miles, p. ej. 1250 -> "1.250". */
+    public static String formatearEntero(long valor) {
+        return new DecimalFormat("#,##0", SIMBOLOS_CO).format(valor);
     }
 
     // ------------------------------------------------------ Ventanas internas
