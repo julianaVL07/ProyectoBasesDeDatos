@@ -111,7 +111,9 @@ public class ProveedorControlador {
     }
 
     /**
-     * Elimina un proveedor. Si tiene suministros, Oracle lo impide (ORA-02292).
+     * Elimina un proveedor. Si tiene suministros, Oracle lo impide (ORA-02292)
+     * y se lanza {@link ProveedorConSuministrosException} para que la vista
+     * pueda ofrecer {@link #desactivar(int)}.
      *
      * @param codigo PCodigo del proveedor
      */
@@ -124,9 +126,30 @@ public class ProveedorControlador {
             }
         } catch (SQLException e) {
             if (ErroresBD.tieneRegistrosAsociados(e)) {
-                throw new ControladorException(
+                throw new ProveedorConSuministrosException(
                         "No se puede eliminar el proveedor porque tiene suministros asociados.", e);
             }
+            throw new ControladorException(ErroresBD.traducir(e), e);
+        }
+    }
+
+    /**
+     * Desactiva un proveedor (PActivo = 0) sin borrarlo: conserva sus
+     * suministros pero deja de aparecer para asignar productos nuevos.
+     *
+     * @param codigo PCodigo del proveedor
+     */
+    public void desactivar(int codigo) throws ControladorException {
+        verificarEdicion();
+        verificarSeleccion(codigo);
+        try {
+            ProveedorDTO p = proveedorDAO.buscarPorCodigo(codigo);
+            if (p == null) {
+                throw new ControladorException("El proveedor ya no existe.");
+            }
+            p.setActivo(false);
+            proveedorDAO.actualizar(p);
+        } catch (SQLException e) {
             throw new ControladorException(ErroresBD.traducir(e), e);
         }
     }

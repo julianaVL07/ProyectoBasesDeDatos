@@ -267,12 +267,21 @@ public abstract class VentanaCrud<T> extends JInternalFrame {
             return;
         }
         try {
-            eliminar(seleccionado);
-            UtilVista.mostrarInfo(this, "Registro eliminado correctamente.");
+            ejecutarEliminacion(seleccionado);
             recargar();
         } catch (ControladorException e) {
             UtilVista.mostrarError(this, e.getMessage());
         }
+    }
+
+    /**
+     * Elimina el registro (ya confirmado) y avisa al usuario. Las subclases lo
+     * sobrescriben si el borrado puede terminar de otra forma (p. ej. Proveedores
+     * ofrece desactivar en lugar de eliminar).
+     */
+    protected void ejecutarEliminacion(T registro) throws ControladorException {
+        eliminar(registro);
+        UtilVista.mostrarInfo(this, "Registro eliminado correctamente.");
     }
 
     /**

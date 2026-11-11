@@ -3,6 +3,7 @@ package co.edu.uniquindio.proyectobasesdedatos.vista.entidades;
 import co.edu.uniquindio.proyectobasesdedatos.controlador.CiudadControlador;
 import co.edu.uniquindio.proyectobasesdedatos.controlador.ControladorException;
 import co.edu.uniquindio.proyectobasesdedatos.controlador.DepartamentoControlador;
+import co.edu.uniquindio.proyectobasesdedatos.controlador.ProveedorConSuministrosException;
 import co.edu.uniquindio.proyectobasesdedatos.controlador.ProveedorControlador;
 import co.edu.uniquindio.proyectobasesdedatos.modelo.dto.CiudadDTO;
 import co.edu.uniquindio.proyectobasesdedatos.modelo.dto.DepartamentoDTO;
@@ -219,6 +220,28 @@ public class VentanaProveedores extends VentanaCrud<ProveedorDTO> {
     @Override
     protected void eliminar(ProveedorDTO p) throws ControladorException {
         controlador.eliminar(p.getCodigo());
+    }
+
+    /**
+     * Si el proveedor tiene suministros no se puede borrar (ORA-02292); en ese
+     * caso se ofrece desactivarlo (PActivo = 0) para conservar su historial.
+     */
+    @Override
+    protected void ejecutarEliminacion(ProveedorDTO p) throws ControladorException {
+        try {
+            super.ejecutarEliminacion(p);
+        } catch (ProveedorConSuministrosException e) {
+            if (!p.isActivo()) {
+                throw new ControladorException(e.getMessage() + "\nEl proveedor ya está inactivo.", e);
+            }
+            boolean desactivar = UtilVista.confirmar(this, e.getMessage()
+                    + "\n¿Desea desactivarlo en su lugar? Conservará sus suministros, "
+                    + "pero no se le podrán asignar productos nuevos.");
+            if (desactivar) {
+                controlador.desactivar(p.getCodigo());
+                UtilVista.mostrarInfo(this, "Proveedor desactivado correctamente.");
+            }
+        }
     }
 
     @Override
