@@ -109,10 +109,9 @@ public class ProveedorDTO {
         this.nombreCiudad = nombreCiudad;
     }
 
+    /** Devuelve solo el nombre para poder usar el DTO directamente en un JComboBox. */
     @Override
     public String toString() {
-        return "ProveedorDTO{codigo=" + codigo + ", nit=" + nit + ", nombre=" + nombre
-                + ", ciudad=" + (nombreCiudad != null ? nombreCiudad : codigoCiudad)
-                + ", activo=" + activo + "}";
+        return nombre;
     }
 }

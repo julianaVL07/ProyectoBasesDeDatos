@@ -4,8 +4,10 @@ import co.edu.uniquindio.proyectobasesdedatos.controlador.ControladorException;
 import co.edu.uniquindio.proyectobasesdedatos.util.Sesion;
 import co.edu.uniquindio.proyectobasesdedatos.vista.util.UtilVista;
 
+import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JInternalFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -13,7 +15,10 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.text.JTextComponent;
 import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Container;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
@@ -148,6 +153,10 @@ public abstract class VentanaCrud<T> extends JInternalFrame {
 
         JPanel formulario = crearFormulario();
         formulario.setBorder(BorderFactory.createTitledBorder("Datos"));
+        if (!Sesion.puedeEditar()) {
+            bloquearCampos(formulario);
+            setTitle(getTitle() + " (solo lectura)");
+        }
         panel.add(formulario, BorderLayout.CENTER);
 
         JPanel botones = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 4));
@@ -158,6 +167,23 @@ public abstract class VentanaCrud<T> extends JInternalFrame {
         botones.add(btnLimpiar);
         panel.add(botones, BorderLayout.SOUTH);
         return panel;
+    }
+
+    /**
+     * Deja el formulario solo para mirar: los textos no se pueden editar y los
+     * combos y casillas quedan deshabilitados. Se usa cuando el rol no puede
+     * editar, para que los datos se vean pero no parezca que se pueden cambiar.
+     */
+    private static void bloquearCampos(Container contenedor) {
+        for (Component c : contenedor.getComponents()) {
+            if (c instanceof JTextComponent texto) {
+                texto.setEditable(false);
+            } else if (c instanceof JComboBox<?> || c instanceof AbstractButton) {
+                c.setEnabled(false);
+            } else if (c instanceof Container hijo) {
+                bloquearCampos(hijo);
+            }
+        }
     }
 
     private JPanel crearPanelTabla() {
@@ -267,12 +293,21 @@ public abstract class VentanaCrud<T> extends JInternalFrame {
             return;
         }
         try {
-            eliminar(seleccionado);
-            UtilVista.mostrarInfo(this, "Registro eliminado correctamente.");
+            ejecutarEliminacion(seleccionado);
             recargar();
         } catch (ControladorException e) {
             UtilVista.mostrarError(this, e.getMessage());
         }
+    }
+
+    /**
+     * Elimina el registro (ya confirmado) y avisa al usuario. Las subclases lo
+     * sobrescriben si el borrado puede terminar de otra forma (p. ej. Proveedores
+     * ofrece desactivar en lugar de eliminar).
+     */
+    protected void ejecutarEliminacion(T registro) throws ControladorException {
+        eliminar(registro);
+        UtilVista.mostrarInfo(this, "Registro eliminado correctamente.");
     }
 
     /**
