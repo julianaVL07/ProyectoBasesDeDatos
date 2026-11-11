@@ -1,6 +1,8 @@
 package co.edu.uniquindio.proyectobasesdedatos;
 
 import co.edu.uniquindio.proyectobasesdedatos.config.ConexionOracle;
+import co.edu.uniquindio.proyectobasesdedatos.controlador.ControladorException;
+import co.edu.uniquindio.proyectobasesdedatos.controlador.LoginControlador;
 import co.edu.uniquindio.proyectobasesdedatos.vista.MenuPrincipal;
 import co.edu.uniquindio.proyectobasesdedatos.vista.VentanaLogin;
 
@@ -21,6 +23,7 @@ public class ProyectoBasesDeDatos {
 
     public static void main(String[] args) {
         usarLookAndFeelDelSistema();
+        registrarSalidaAlTerminar();
 
         // Toda la interfaz Swing se crea en el hilo de eventos (EDT).
         SwingUtilities.invokeLater(() -> {
@@ -47,6 +50,21 @@ public class ProyectoBasesDeDatos {
         } else {
             System.exit(0);
         }
+    }
+
+    /**
+     * Respaldo: si la JVM termina sin pasar por "Salir" (p. ej. Ctrl+C en la
+     * consola o cierre del sistema), registra la salida de la sesión abierta.
+     * {@link LoginControlador#salir()} no hace nada si ya se registró.
+     */
+    private static void registrarSalidaAlTerminar() {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                new LoginControlador().salir();
+            } catch (ControladorException e) {
+                System.err.println("No se pudo registrar la salida: " + e.getMessage());
+            }
+        }, "registro-salida-bitacora"));
     }
 
     /** Usa la apariencia nativa (Windows, macOS, GTK); si falla, deja la de Java. */

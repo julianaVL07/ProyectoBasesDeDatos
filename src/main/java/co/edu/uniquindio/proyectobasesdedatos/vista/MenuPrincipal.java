@@ -1,5 +1,8 @@
 package co.edu.uniquindio.proyectobasesdedatos.vista;
 
+import co.edu.uniquindio.proyectobasesdedatos.ProyectoBasesDeDatos;
+import co.edu.uniquindio.proyectobasesdedatos.controlador.ControladorException;
+import co.edu.uniquindio.proyectobasesdedatos.controlador.LoginControlador;
 import co.edu.uniquindio.proyectobasesdedatos.modelo.dto.RolDTO;
 import co.edu.uniquindio.proyectobasesdedatos.modelo.dto.UsuarioDTO;
 import co.edu.uniquindio.proyectobasesdedatos.util.Sesion;
@@ -22,6 +25,8 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.beans.PropertyVetoException;
 
 /**
@@ -43,11 +48,19 @@ public class MenuPrincipal extends JFrame {
 
     private final JDesktopPane escritorio = new JDesktopPane();
     private final JLabel lblEstado = new JLabel();
+    private final LoginControlador loginControlador = new LoginControlador();
 
     /** Crea la ventana principal con los menús que permite el rol del usuario en sesión. */
     public MenuPrincipal() {
         super("Proyecto Final Bases de Datos I — Gestión de Proveedores");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        // La X de la ventana pasa por salir() para registrar la salida en la Bitácora.
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                salir();
+            }
+        });
         setMinimumSize(new Dimension(900, 600));
         setSize(1200, 750);
         setLocationRelativeTo(null);
@@ -120,8 +133,7 @@ public class MenuPrincipal extends JFrame {
 
     private JMenu crearMenuSesion() {
         JMenu menu = new JMenu("Sesión");
-        // TODO Juliana: registrar la salida en la Bitácora, Sesion.cerrar() y volver al Login.
-        menu.add(crearItem("Cerrar sesión", this::enConstruccion));
+        menu.add(crearItem("Cerrar sesión", this::cerrarSesion));
         menu.add(new JSeparator());
         menu.add(crearItem("Salir", this::salir));
         return menu;
@@ -217,11 +229,34 @@ public class MenuPrincipal extends JFrame {
         UtilVista.mostrarInfo(this, "Esta opción está en construcción.");
     }
 
+    /** Registra la salida en la Bitácora, cierra la ventana y vuelve al Login. */
+    private void cerrarSesion() {
+        if (UtilVista.confirmar(this, "¿Desea cerrar la sesión?")) {
+            registrarSalida();
+            dispose();
+            ProyectoBasesDeDatos.abrirAplicacion();
+        }
+    }
+
+    /** Registra la salida en la Bitácora y termina la aplicación. */
     private void salir() {
-        // TODO Juliana: registrar la salida en la Bitácora antes de cerrar la aplicación.
         if (UtilVista.confirmar(this, "¿Desea salir de la aplicación?")) {
+            registrarSalida();
             dispose();
             System.exit(0);
+        }
+    }
+
+    /**
+     * Registra la salida y cierra la {@link Sesion}. Si falla la base de datos
+     * solo se avisa: la sesión se cierra de todas formas.
+     */
+    private void registrarSalida() {
+        try {
+            loginControlador.salir();
+        } catch (ControladorException e) {
+            UtilVista.mostrarError(this, "No se pudo registrar la salida en la bitácora.\n"
+                    + e.getMessage());
         }
     }
 }
