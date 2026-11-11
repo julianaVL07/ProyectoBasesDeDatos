@@ -10,6 +10,8 @@ import co.edu.uniquindio.proyectobasesdedatos.vista.auditoria.VentanaBitacora;
 import co.edu.uniquindio.proyectobasesdedatos.vista.auditoria.VentanaUsuarios;
 import co.edu.uniquindio.proyectobasesdedatos.vista.consultas.VentanaConsultas;
 import co.edu.uniquindio.proyectobasesdedatos.vista.entidades.VentanaCategorias;
+import co.edu.uniquindio.proyectobasesdedatos.vista.entidades.VentanaCiudades;
+import co.edu.uniquindio.proyectobasesdedatos.vista.entidades.VentanaDepartamentos;
 import co.edu.uniquindio.proyectobasesdedatos.vista.entidades.VentanaProductos;
 import co.edu.uniquindio.proyectobasesdedatos.vista.util.UtilVista;
 
@@ -96,10 +98,8 @@ public class MenuPrincipal extends JFrame {
     private JMenu crearMenuEntidades() {
         JMenu menu = new JMenu("Entidades");
 
-        // TODO Sara: abrir la ventana CRUD de Departamentos (Fase 3).
-        menu.add(crearItem("Departamentos", this::enConstruccion));
-        // TODO Sara: abrir la ventana CRUD de Ciudades (Fase 3).
-        menu.add(crearItem("Ciudades", this::enConstruccion));
+        menu.add(crearItem("Departamentos", () -> abrirVentana(new VentanaDepartamentos())));
+        menu.add(crearItem("Ciudades", () -> abrirVentana(new VentanaCiudades())));
         menu.add(new JSeparator());
         menu.add(crearItem("Categorías", () -> abrirVentana(new VentanaCategorias())));
         menu.add(crearItem("Productos", () -> abrirVentana(new VentanaProductos())));
