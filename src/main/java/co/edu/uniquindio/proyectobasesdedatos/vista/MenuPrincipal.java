@@ -13,6 +13,7 @@ import co.edu.uniquindio.proyectobasesdedatos.vista.entidades.VentanaCategorias;
 import co.edu.uniquindio.proyectobasesdedatos.vista.entidades.VentanaCiudades;
 import co.edu.uniquindio.proyectobasesdedatos.vista.entidades.VentanaDepartamentos;
 import co.edu.uniquindio.proyectobasesdedatos.vista.entidades.VentanaProductos;
+import co.edu.uniquindio.proyectobasesdedatos.vista.transacciones.VentanaSuministros;
 import co.edu.uniquindio.proyectobasesdedatos.vista.util.UtilVista;
 
 import javax.swing.BorderFactory;
@@ -111,8 +112,7 @@ public class MenuPrincipal extends JFrame {
 
     private JMenu crearMenuTransacciones() {
         JMenu menu = new JMenu("Transacciones");
-        // TODO Juliana: abrir la ventana de Suministros.
-        menu.add(crearItem("Suministros", this::enConstruccion));
+        menu.add(crearItem("Suministros", () -> abrirVentana(new VentanaSuministros())));
         return menu;
     }
 
