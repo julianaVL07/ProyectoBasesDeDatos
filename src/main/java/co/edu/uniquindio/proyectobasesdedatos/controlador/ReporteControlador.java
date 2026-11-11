@@ -193,6 +193,52 @@ public class ReporteControlador {
         }
     }
 
+    // ------------------------------------------- Conversión de filtros (vista)
+
+    /**
+     * Convierte el texto de un filtro de precio. Acepta "28.900,50", "28900.5"
+     * o "28.900" e ignora "$" y espacios.
+     *
+     * @param campo nombre del campo para el mensaje de error, p. ej. "El precio mínimo"
+     * @return el valor, o null si el campo está vacío (sin límite)
+     */
+    public BigDecimal convertirPrecioFiltro(String texto, String campo) throws ControladorException {
+        String limpio = texto == null ? "" : texto.replace("$", "").replace(" ", "").trim();
+        if (limpio.isEmpty()) {
+            return null;
+        }
+        if (limpio.contains(",")) {
+            limpio = limpio.replace(".", "").replace(",", ".");
+        } else if (limpio.matches("-?\\d{1,3}(\\.\\d{3})+")) {
+            limpio = limpio.replace(".", "");
+        }
+        try {
+            return new BigDecimal(limpio);
+        } catch (NumberFormatException e) {
+            throw new ControladorException(campo + " debe ser un número (por ejemplo 28900 o 28.900,50).");
+        }
+    }
+
+    /**
+     * Convierte el texto de un filtro de stock (entero, admite punto de miles).
+     *
+     * @return el valor, o null si el campo está vacío (sin límite)
+     */
+    public Integer convertirStockFiltro(String texto, String campo) throws ControladorException {
+        String limpio = texto == null ? "" : texto.replace(" ", "").trim();
+        if (limpio.isEmpty()) {
+            return null;
+        }
+        if (limpio.matches("-?\\d{1,3}(\\.\\d{3})+")) {
+            limpio = limpio.replace(".", "");
+        }
+        try {
+            return Integer.valueOf(limpio);
+        } catch (NumberFormatException e) {
+            throw new ControladorException(campo + " debe ser un número entero.");
+        }
+    }
+
     // ------------------------------------------------------- Apoyo interno
 
     private void verificarConsulta() throws ControladorException {
