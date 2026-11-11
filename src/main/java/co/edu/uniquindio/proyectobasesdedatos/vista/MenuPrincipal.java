@@ -13,6 +13,7 @@ import co.edu.uniquindio.proyectobasesdedatos.vista.entidades.VentanaCategorias;
 import co.edu.uniquindio.proyectobasesdedatos.vista.entidades.VentanaCiudades;
 import co.edu.uniquindio.proyectobasesdedatos.vista.entidades.VentanaDepartamentos;
 import co.edu.uniquindio.proyectobasesdedatos.vista.entidades.VentanaProductos;
+import co.edu.uniquindio.proyectobasesdedatos.vista.entidades.VentanaProveedores;
 import co.edu.uniquindio.proyectobasesdedatos.vista.transacciones.VentanaSuministros;
 import co.edu.uniquindio.proyectobasesdedatos.vista.util.UtilVista;
 
@@ -105,8 +106,7 @@ public class MenuPrincipal extends JFrame {
         menu.add(crearItem("Categorías", () -> abrirVentana(new VentanaCategorias())));
         menu.add(crearItem("Productos", () -> abrirVentana(new VentanaProductos())));
         menu.add(new JSeparator());
-        // TODO Sara: abrir la ventana CRUD de Proveedores (Fase 4).
-        menu.add(crearItem("Proveedores", this::enConstruccion));
+        menu.add(crearItem("Proveedores", () -> abrirVentana(new VentanaProveedores())));
         return menu;
     }
 
