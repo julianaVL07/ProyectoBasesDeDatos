@@ -199,6 +199,123 @@ public class ReporteDAO {
         return datos;
     }
 
+    // ======================================== 4. Productos de una categoría
+
+    /**
+     * Productos de una categoría con la cantidad de proveedores que los
+     * suministran (0 si ninguno: por eso se usa LEFT JOIN).
+     *
+     * @param codigoCategoria CaCodigo de la categoría
+     */
+    public DatosReporte productosPorCategoria(int codigoCategoria) throws SQLException {
+        String sql = "SELECT pr.PrNombre, pr.PrDescripcion, pr.PrPrecioBase, pr.PrStock, "
+                + "COUNT(s.PCodigo) AS Proveedores "
+                + "FROM TProducto pr "
+                + "LEFT JOIN TSuministro s ON s.PrCodigo = pr.PrCodigo "
+                + "WHERE pr.CaCodigo = ? "
+                + "GROUP BY pr.PrCodigo, pr.PrNombre, pr.PrDescripcion, pr.PrPrecioBase, pr.PrStock "
+                + "ORDER BY pr.PrNombre";
+
+        DatosReporte datos = new DatosReporte("Productos por categoría",
+                new String[]{"Producto", "Descripción", "Precio base", "Stock", "Proveedores"},
+                new float[]{4, 5, 2.2f, 1.4f, 1.6f});
+        datos.alinearDerecha(2, 3, 4);
+
+        try (Connection con = ConexionOracle.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, codigoCategoria);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    datos.agregarFila(
+                            rs.getString("PrNombre"),
+                            rs.getString("PrDescripcion"),
+                            precio(rs.getBigDecimal("PrPrecioBase")),
+                            entero(rs.getLong("PrStock")),
+                            entero(rs.getLong("Proveedores")));
+                }
+            }
+        }
+        return datos;
+    }
+
+    // =========================================== 5. Resumen por categoría
+
+    /**
+     * Resumen estadístico por categoría: cantidad de productos, precio
+     * promedio, mínimo y máximo, y stock total. Las categorías sin productos
+     * también aparecen (LEFT JOIN) con cantidad 0. Incluye fila de totales.
+     *
+     * @param codigoCategoria CaCodigo, o null para todas las categorías
+     */
+    public DatosReporte resumenPorCategoria(Integer codigoCategoria) throws SQLException {
+        StringBuilder sql = new StringBuilder(
+                "SELECT ca.CaNombre, COUNT(pr.PrCodigo) AS Cantidad, "
+                + "ROUND(AVG(pr.PrPrecioBase), 2) AS Promedio, "
+                + "MIN(pr.PrPrecioBase) AS Minimo, MAX(pr.PrPrecioBase) AS Maximo, "
+                + "NVL(SUM(pr.PrPrecioBase), 0) AS SumaPrecios, "
+                + "NVL(SUM(pr.PrStock), 0) AS StockTotal "
+                + "FROM TCategoria ca "
+                + "LEFT JOIN TProducto pr ON pr.CaCodigo = ca.CaCodigo");
+        List<Object> parametros = new ArrayList<>();
+        if (codigoCategoria != null) {
+            sql.append(" WHERE ca.CaCodigo = ?");
+            parametros.add(codigoCategoria);
+        }
+        sql.append(" GROUP BY ca.CaCodigo, ca.CaNombre ORDER BY ca.CaNombre");
+
+        DatosReporte datos = new DatosReporte("Resumen de productos por categoría",
+                new String[]{"Categoría", "Productos", "Precio promedio", "Precio mínimo",
+                        "Precio máximo", "Stock total"},
+                new float[]{3, 1.5f, 2.3f, 2.3f, 2.3f, 1.7f});
+        datos.alinearDerecha(1, 2, 3, 4, 5);
+
+        long totalProductos = 0;
+        long totalStock = 0;
+        BigDecimal sumaPrecios = BigDecimal.ZERO;
+        BigDecimal minimo = null;
+        BigDecimal maximo = null;
+
+        try (Connection con = ConexionOracle.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql.toString())) {
+            asignar(ps, parametros);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    long cantidad = rs.getLong("Cantidad");
+                    BigDecimal min = rs.getBigDecimal("Minimo");
+                    BigDecimal max = rs.getBigDecimal("Maximo");
+                    long stock = rs.getLong("StockTotal");
+                    datos.agregarFila(
+                            rs.getString("CaNombre"),
+                            entero(cantidad),
+                            precio(rs.getBigDecimal("Promedio")),
+                            precio(min),
+                            precio(max),
+                            entero(stock));
+
+                    totalProductos += cantidad;
+                    totalStock += stock;
+                    sumaPrecios = sumaPrecios.add(rs.getBigDecimal("SumaPrecios"));
+                    if (min != null && (minimo == null || min.compareTo(minimo) < 0)) {
+                        minimo = min;
+                    }
+                    if (max != null && (maximo == null || max.compareTo(maximo) > 0)) {
+                        maximo = max;
+                    }
+                }
+            }
+        }
+
+        if (!datos.estaVacio()) {
+            // El promedio general se calcula sobre todos los productos, no
+            // promediando los promedios de cada categoría.
+            BigDecimal promedio = totalProductos == 0 ? null
+                    : sumaPrecios.divide(BigDecimal.valueOf(totalProductos), 2, RoundingMode.HALF_UP);
+            datos.setTotales("TOTAL", entero(totalProductos), precio(promedio),
+                    precio(minimo), precio(maximo), entero(totalStock));
+        }
+        return datos;
+    }
+
     // ------------------------------------------------------- Apoyo interno
 
     /** Asigna los parámetros en orden según su tipo. */
