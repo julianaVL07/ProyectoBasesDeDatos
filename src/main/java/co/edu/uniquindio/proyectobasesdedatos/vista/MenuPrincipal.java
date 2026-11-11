@@ -6,6 +6,8 @@ import co.edu.uniquindio.proyectobasesdedatos.controlador.LoginControlador;
 import co.edu.uniquindio.proyectobasesdedatos.modelo.dto.RolDTO;
 import co.edu.uniquindio.proyectobasesdedatos.modelo.dto.UsuarioDTO;
 import co.edu.uniquindio.proyectobasesdedatos.util.Sesion;
+import co.edu.uniquindio.proyectobasesdedatos.vista.auditoria.VentanaBitacora;
+import co.edu.uniquindio.proyectobasesdedatos.vista.auditoria.VentanaUsuarios;
 import co.edu.uniquindio.proyectobasesdedatos.vista.consultas.VentanaConsultas;
 import co.edu.uniquindio.proyectobasesdedatos.vista.entidades.VentanaCategorias;
 import co.edu.uniquindio.proyectobasesdedatos.vista.entidades.VentanaProductos;
@@ -124,10 +126,8 @@ public class MenuPrincipal extends JFrame {
 
     private JMenu crearMenuAuditoria() {
         JMenu menu = new JMenu("Auditoría");
-        // TODO Juliana: abrir la ventana de Gestión de usuarios.
-        menu.add(crearItem("Gestión de usuarios", this::enConstruccion));
-        // TODO Juliana: abrir la ventana de Bitácora.
-        menu.add(crearItem("Bitácora", this::enConstruccion));
+        menu.add(crearItem("Gestión de usuarios", () -> abrirVentana(new VentanaUsuarios())));
+        menu.add(crearItem("Bitácora", () -> abrirVentana(new VentanaBitacora())));
         return menu;
     }
 
