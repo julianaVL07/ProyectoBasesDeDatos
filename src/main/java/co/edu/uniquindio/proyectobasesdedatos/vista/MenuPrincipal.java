@@ -4,6 +4,8 @@ import co.edu.uniquindio.proyectobasesdedatos.modelo.dto.RolDTO;
 import co.edu.uniquindio.proyectobasesdedatos.modelo.dto.UsuarioDTO;
 import co.edu.uniquindio.proyectobasesdedatos.util.Sesion;
 import co.edu.uniquindio.proyectobasesdedatos.vista.consultas.VentanaConsultas;
+import co.edu.uniquindio.proyectobasesdedatos.vista.entidades.VentanaCategorias;
+import co.edu.uniquindio.proyectobasesdedatos.vista.entidades.VentanaProductos;
 import co.edu.uniquindio.proyectobasesdedatos.vista.util.UtilVista;
 
 import javax.swing.BorderFactory;
@@ -84,10 +86,8 @@ public class MenuPrincipal extends JFrame {
         // TODO Sara: abrir la ventana CRUD de Ciudades (Fase 3).
         menu.add(crearItem("Ciudades", this::enConstruccion));
         menu.add(new JSeparator());
-        // TODO Sara: abrir la ventana CRUD de Categorías (Fase 2).
-        menu.add(crearItem("Categorías", this::enConstruccion));
-        // TODO Sara: abrir la ventana CRUD de Productos (Fase 2).
-        menu.add(crearItem("Productos", this::enConstruccion));
+        menu.add(crearItem("Categorías", () -> abrirVentana(new VentanaCategorias())));
+        menu.add(crearItem("Productos", () -> abrirVentana(new VentanaProductos())));
         menu.add(new JSeparator());
         // TODO Sara: abrir la ventana CRUD de Proveedores (Fase 4).
         menu.add(crearItem("Proveedores", this::enConstruccion));
