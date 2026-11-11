@@ -24,5 +24,16 @@
             <artifactId>ojdbc11</artifactId>
             <version>23.9.0.25.07</version>
         </dependency>
+
+        <!--
+            Apache PDFBox: librería para crear y leer archivos PDF (NO es un
+            framework). Se usa para generar los reportes y mostrarlos dentro de
+            la aplicación (PDFRenderer).
+        -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>3.0.8</version>
+        </dependency>
     </dependencies>
 </project>
