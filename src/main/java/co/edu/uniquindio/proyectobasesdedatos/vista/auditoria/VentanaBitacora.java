@@ -5,6 +5,7 @@ import co.edu.uniquindio.proyectobasesdedatos.controlador.ControladorException;
 import co.edu.uniquindio.proyectobasesdedatos.controlador.UsuarioControlador;
 import co.edu.uniquindio.proyectobasesdedatos.modelo.dto.BitacoraDTO;
 import co.edu.uniquindio.proyectobasesdedatos.modelo.dto.UsuarioDTO;
+import co.edu.uniquindio.proyectobasesdedatos.util.Sesion;
 import co.edu.uniquindio.proyectobasesdedatos.vista.util.UtilVista;
 
 import javax.swing.BorderFactory;
@@ -32,13 +33,19 @@ import java.util.List;
  * solo Administrador).
  *
  * <p>Filtra por rango de fechas de ingreso (dos {@link JSpinner} de fecha) y
- * por usuario (combo con la opción "Todos"). Si un registro no tiene salida
- * se muestra "Sesión abierta".</p>
+ * por usuario (combo con la opción "Todos"). Si un registro no tiene salida:</p>
+ * <ul>
+ *   <li>Si es la sesión actual se muestra "Sesión abierta".</li>
+ *   <li>Si es otra, se muestra "Sin salida registrada": la aplicación se cerró
+ *       de forma forzada (p. ej. el botón detener del IDE o un corte de luz)
+ *       sin poder registrar la salida. No se inventa una hora de salida.</li>
+ * </ul>
  */
 public class VentanaBitacora extends JInternalFrame {
 
     private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final String SESION_ABIERTA = "Sesión abierta";
+    private static final String SIN_SALIDA = "Sin salida registrada";
     /** Al abrir la ventana se muestran los ingresos de los últimos días. */
     private static final int DIAS_POR_DEFECTO = 7;
 
@@ -144,8 +151,8 @@ public class VentanaBitacora extends JInternalFrame {
                         b.getNombreCompleto(),
                         formatear(b.getFechaIngreso()),
                         b.getHoraIngreso(),
-                        b.isSesionAbierta() ? SESION_ABIERTA : formatear(b.getFechaSalida()),
-                        b.isSesionAbierta() ? SESION_ABIERTA : b.getHoraSalida()
+                        b.isSesionAbierta() ? textoSinSalida(b) : formatear(b.getFechaSalida()),
+                        b.isSesionAbierta() ? textoSinSalida(b) : b.getHoraSalida()
                 });
             }
             lblTotal.setText("Registros: " + registros.size());
@@ -158,6 +165,11 @@ public class VentanaBitacora extends JInternalFrame {
 
     private static String formatear(LocalDate fecha) {
         return fecha == null ? "" : fecha.format(FORMATO_FECHA);
+    }
+
+    /** Texto para un registro sin salida: la sesión actual sigue abierta; las demás no registraron salida. */
+    private static String textoSinSalida(BitacoraDTO b) {
+        return b.getCodigo() == Sesion.getCodigoBitacora() ? SESION_ABIERTA : SIN_SALIDA;
     }
 
     private static LocalDate aLocalDate(Date fecha) {

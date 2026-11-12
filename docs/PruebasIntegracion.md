@@ -183,7 +183,7 @@ Menú **Auditoría → Bitácora**.
 | # | Acción | Resultado esperado | ✔ |
 |---|--------|--------------------|---|
 | 6.1 | Abrir la ventana (por defecto muestra los últimos días, usuario "Todos") | Aparecen los ingresos de hoy de `admin`, `tradicional`, `esporadico` y `aperez`, del más reciente al más antiguo, con fecha y hora de ingreso y de salida. | |
-| 6.2 | Revisar la fila de la sesión actual de `admin` | En la salida dice **"Sesión abierta"**. | |
+| 6.2 | Revisar la fila de la sesión actual de `admin` | En la salida dice **"Sesión abierta"**. Si hay filas antiguas sin salida (la app se cerró a la fuerza), dicen **"Sin salida registrada"**. | |
 | 6.3 | Revisar las filas de `tradicional` (salió con **Salir**) y `esporadico` (salió con la **X**) | Ambas tienen fecha y hora de salida. | |
 | 6.4 | Filtrar por usuario `tradicional` | Solo aparecen los registros de `tradicional`. | |
 | 6.5 | Poner la fecha "desde" posterior a la fecha "hasta" y pulsar **Buscar** | "La fecha "desde" no puede ser posterior a la fecha "hasta"." | |
