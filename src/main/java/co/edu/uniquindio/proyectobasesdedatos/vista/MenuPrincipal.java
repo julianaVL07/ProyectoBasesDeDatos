@@ -14,6 +14,7 @@ import co.edu.uniquindio.proyectobasesdedatos.vista.entidades.VentanaCiudades;
 import co.edu.uniquindio.proyectobasesdedatos.vista.entidades.VentanaDepartamentos;
 import co.edu.uniquindio.proyectobasesdedatos.vista.entidades.VentanaProductos;
 import co.edu.uniquindio.proyectobasesdedatos.vista.entidades.VentanaProveedores;
+import co.edu.uniquindio.proyectobasesdedatos.vista.reportes.VentanaReportes;
 import co.edu.uniquindio.proyectobasesdedatos.vista.transacciones.VentanaSuministros;
 import co.edu.uniquindio.proyectobasesdedatos.vista.util.UtilVista;
 
@@ -119,8 +120,7 @@ public class MenuPrincipal extends JFrame {
     private JMenu crearMenuReportes() {
         JMenu menu = new JMenu("Reportes/Consultas");
         menu.add(crearItem("Consultas", () -> abrirVentana(new VentanaConsultas())));
-        // TODO Sara: abrir la ventana de Reportes (Fase 5).
-        menu.add(crearItem("Reportes", this::enConstruccion));
+        menu.add(crearItem("Reportes", () -> abrirVentana(new VentanaReportes())));
         return menu;
     }
 
@@ -224,10 +224,6 @@ public class MenuPrincipal extends JFrame {
     }
 
     // ---------------------------------------------------------------- Acciones
-
-    private void enConstruccion() {
-        UtilVista.mostrarInfo(this, "Esta opción está en construcción.");
-    }
 
     /** Registra la salida en la Bitácora, cierra la ventana y vuelve al Login. */
     private void cerrarSesion() {
