@@ -37,6 +37,7 @@ Noviembre de 2026
 4. [Diagrama relacional normalizado](#4-diagrama-relacional-normalizado)
 5. [Consultas](#5-consultas)
 6. [Reportes](#6-reportes)
+7. [Instalación y ejecución](#7-instalación-y-ejecución)
 
 ---
 
@@ -399,3 +400,80 @@ Detalles:
 - En el reporte 2 se valida que los valores no sean negativos y que el mínimo no sea mayor que el máximo.
 - Los reportes 4 y 5 usan `LEFT JOIN` para que también aparezcan los productos sin proveedores y las categorías sin productos (con 0).
 - Cada PDF lleva título, los filtros aplicados y la cantidad de registros en el subtítulo, un pie con la fecha y hora de generación, el usuario que lo generó y "Página X de Y", y los valores con formato colombiano (`$ 28.900,00`).
+
+---
+
+## 7. Instalación y ejecución
+
+### 7.1 Requisitos
+
+- **JDK 25** (la variable `JAVA_HOME` debe apuntar a él).
+- **Apache Maven 3.9** o superior (o el Maven que trae NetBeans).
+- **Oracle Database** XE 21c, Free 23ai o cualquier versión 12c o superior.
+- **SQL Developer** (u otra herramienta para ejecutar scripts SQL).
+
+Las dependencias (`ojdbc11` y `pdfbox`) las descarga Maven automáticamente.
+
+### 7.2 Crear el usuario de la base de datos (opcional)
+
+Como `SYSTEM`, en la base de datos conectable (en XE 21c es `XEPDB1`, en Free 23ai es `FREEPDB1`):
+
+```sql
+ALTER SESSION SET CONTAINER = XEPDB1;
+CREATE USER PROYECTO_BD IDENTIFIED BY "cambiar_esta_clave"
+    DEFAULT TABLESPACE USERS QUOTA UNLIMITED ON USERS;
+GRANT CREATE SESSION, CREATE TABLE, CREATE VIEW, CREATE SEQUENCE TO PROYECTO_BD;
+```
+
+### 7.3 Ejecutar los scripts SQL
+
+Conectado con el usuario del proyecto, ejecutar **en este orden** los scripts de la carpeta `sql/` (en SQL Developer: abrir el archivo y pulsar *Ejecutar script*, F5):
+
+| Orden | Script | Qué hace |
+|:-----:|--------|----------|
+| 0 | `00_borrar_tablas.sql` | *(Opcional)* Borra todas las tablas para empezar de cero. La primera vez muestra `ORA-00942` porque las tablas no existen; se puede ignorar. |
+| 1 | `01_crear_tablas.sql` | Crea las 9 tablas con sus llaves, restricciones e índices. |
+| 2 | `02_datos_iniciales.sql` | Inserta los 3 roles, el usuario administrador y algunos departamentos y ciudades. |
+| 3 | `03_datos_prueba.sql` | Inserta datos de prueba: departamentos, ciudades, 5 categorías, 20 productos, 9 proveedores, 32 suministros y los usuarios tradicional y esporádico. |
+
+Si se ejecuta `03_datos_prueba.sql` dos veces sin borrar, Oracle muestra `ORA-00001` por los datos únicos: hay que volver a correr 00 → 01 → 02 → 03.
+
+### 7.4 Configurar la conexión (`db.properties`)
+
+1. En `src/main/resources/` copiar `db.properties.example` con el nombre `db.properties`.
+2. Editar la URL, el usuario y la contraseña:
+
+   ```properties
+   # Oracle XE 21c:     jdbc:oracle:thin:@//localhost:1521/XEPDB1
+   # Oracle Free 23ai:  jdbc:oracle:thin:@//localhost:1521/FREEPDB1
+   db.url=jdbc:oracle:thin:@//localhost:1521/XEPDB1
+   db.user=PROYECTO_BD
+   db.password=cambiar_esta_clave
+   ```
+
+`db.properties` está en el `.gitignore` para no subir la contraseña a GitHub.
+
+### 7.5 Compilar y ejecutar
+
+Desde la carpeta del proyecto:
+
+```bash
+mvn package            # compila y genera target/ProyectoBasesDeDatos-1.0-SNAPSHOT.jar
+mvn exec:java          # ejecuta la clase principal (co.edu.uniquindio.proyectobasesdedatos.ProyectoBasesDeDatos)
+```
+
+También se puede abrir el proyecto en **NetBeans** (o IntelliJ / Eclipse) como proyecto Maven y ejecutar la clase `ProyectoBasesDeDatos`.
+
+Al iniciar, la aplicación prueba la conexión con Oracle; si falla, muestra un mensaje y se cierra (revisar que Oracle esté encendido y los datos de `db.properties`). Si la conexión funciona, aparece la ventana de **Login**.
+
+### 7.6 Credenciales de prueba
+
+| Usuario | Contraseña | Rol | Creado en |
+|---------|------------|-----|-----------|
+| `admin` | `Admin123*` | ADMINISTRADOR | `02_datos_iniciales.sql` |
+| `tradicional` | `Trad123*` | TRADICIONAL | `03_datos_prueba.sql` |
+| `esporadico` | `Espo123*` | ESPORADICO | `03_datos_prueba.sql` |
+
+Se recomienda cambiar la clave del administrador desde **Auditoría → Gestión de usuarios** después del primer ingreso.
+
+La guía paso a paso para probar la aplicación con los tres usuarios está en [`PruebasIntegracion.md`](PruebasIntegracion.md).
