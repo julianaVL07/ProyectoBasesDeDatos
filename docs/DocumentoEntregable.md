@@ -299,7 +299,7 @@ Restricciones adicionales de la tabla:
 
 ![Relacional](DiagramaRelacional.png)
 
-En notación de texto (llave primaria **subrayada** en el diagrama, aquí en **negrita**; llaves foráneas con `#`):
+En notación de texto (la llave primaria, **subrayada** en el diagrama, es la primera columna de cada tabla; las llaves foráneas van con `#`):
 
 ```
 TDepartamento (DCodigo, DNombre)
