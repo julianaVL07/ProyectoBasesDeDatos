@@ -204,6 +204,28 @@ public class UsuarioDAO {
         }
     }
 
+    // ---------------------------------------------------------------- DELETE
+
+    /**
+     * Elimina físicamente un usuario.
+     *
+     * <p>Si el usuario ya tiene registros en la Bitácora (TBitacora), Oracle
+     * lanza ORA-02292 (restricción de llave foránea). El controlador lo detecta
+     * y sugiere desactivar el usuario (UActivo = 0) para conservar su historial.</p>
+     *
+     * @return true si se eliminó la fila
+     */
+    public boolean eliminar(int codigo) throws SQLException {
+        String sql = "DELETE FROM TUsuario WHERE UCodigo = ?";
+
+        try (Connection con = ConexionOracle.getConexion();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, codigo);
+            return ps.executeUpdate() > 0;
+        }
+    }
+
     // ------------------------------------------------------- Apoyo interno
 
     /** SELECT común: trae el usuario y el nombre de su rol (JOIN con TRol). */

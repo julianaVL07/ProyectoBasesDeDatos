@@ -70,6 +70,9 @@ Menú **Auditoría → Gestión de usuarios**.
 | 2.2.12 | Seleccionar `admin` → **Desactivar** | "No puede desactivar su propio usuario." | |
 | 2.2.13 | Seleccionar `admin`, cambiarle el rol a TRADICIONAL y **Actualizar** | "No puede quitarse a sí mismo el rol de administrador." | |
 | 2.2.14 | *(En SQL Developer)* `INSERT INTO TUsuario (UNombreUsuario, UContrasena, UNombreCompleto, RCodigo) VALUES ('admin2', 'x', 'Otro admin', 1);` | Oracle rechaza con `ORA-00001` (`UX_USUARIO_UNICO_ADMIN`): solo puede haber un administrador. | |
+| 2.2.15 | Seleccionar `admin` | El botón **Eliminar** está deshabilitado (no se puede eliminar al administrador ni al usuario en sesión). | |
+| 2.2.16 | Crear `temporal`, nombre "Usuario Temporal", rol ESPORADICO, clave `Temp123*` | "Usuario creado correctamente." | |
+| 2.2.17 | Seleccionar `temporal` → **Eliminar** → confirmar | "Usuario eliminado correctamente." Desaparece de la tabla (nunca ingresó, no tiene registros en la Bitácora). | |
 
 ### 2.3 Entidades (CRUD rápido)
 
@@ -186,7 +189,9 @@ Menú **Auditoría → Bitácora**.
 | 6.5 | Poner la fecha "desde" posterior a la fecha "hasta" y pulsar **Buscar** | "La fecha "desde" no puede ser posterior a la fecha "hasta"." | |
 | 6.6 | Pulsar **Hoy** | Las dos fechas vuelven a hoy y se recarga la tabla. | |
 | 6.7 | *(En SQL Developer)* `SELECT * FROM TBitacora ORDER BY BCodigo DESC;` | Los mismos registros; `BFechaSalida` y `BHoraSalida` en `NULL` solo para la sesión abierta. | |
-| 6.8 | Salir con **Sesión → Salir** y repetir la consulta 6.7 | La última sesión de `admin` ya tiene fecha y hora de salida. | |
+| 6.8 | **Auditoría → Gestión de usuarios**: seleccionar `tradicional` → **Eliminar** → confirmar | "No se puede eliminar el usuario porque tiene registros en la Bitácora." y pregunta si desea desactivarlo. | |
+| 6.9 | Responder **No** a la pregunta anterior | El usuario `tradicional` sigue activo y su historial en la Bitácora no cambia. | |
+| 6.10 | Salir con **Sesión → Salir** y repetir la consulta 6.7 | La última sesión de `admin` ya tiene fecha y hora de salida. | |
 
 ---
 
@@ -196,10 +201,10 @@ Menú **Auditoría → Bitácora**.
 |--------|:-------:|:-------:|---------------|
 | 0. Arranque | 2 | | |
 | 1. Login | 5 | | |
-| 2. Administrador | 48 | | |
+| 2. Administrador | 51 | | |
 | 3. Tradicional | 8 | | |
 | 4. Esporádico | 5 | | |
 | 5. Usuario inactivo | 2 | | |
-| 6. Bitácora | 8 | | |
+| 6. Bitácora | 10 | | |
 
 Probado por: ____________________  Fecha: ____________

@@ -70,7 +70,7 @@ La ventana principal (`MenuPrincipal`) es un escritorio con ventanas internas y 
 | **Entidades** | Departamentos, Ciudades, Categorías, Productos, Proveedores | CRUD completo (`INSERT`, `SELECT`, `UPDATE`, `DELETE`) de cada entidad, con búsqueda por nombre y validaciones. |
 | **Transacciones** | Suministros | Asigna productos a proveedores con su precio de suministro y días de entrega (tabla `TSuministro`, que resuelve la relación muchos a muchos). |
 | **Reportes/Consultas** | Consultas, Reportes | 5 consultas (3 con JOIN de 3 o más tablas y 2 con subconsultas) mostradas en una tabla, y 5 reportes en PDF filtrados por el usuario y mostrados en un visor dentro de la aplicación. |
-| **Auditoría** | Gestión de usuarios, Bitácora | El administrador crea, edita, activa/desactiva usuarios y les cambia la clave; también consulta la bitácora de entradas y salidas filtrando por fechas y usuario. |
+| **Auditoría** | Gestión de usuarios, Bitácora | El administrador crea, edita, activa/desactiva, elimina usuarios y les cambia la clave; también consulta la bitácora de entradas y salidas filtrando por fechas y usuario. |
 | **Sesión** | Cerrar sesión, Salir | Registra la salida en la bitácora. "Cerrar sesión" vuelve al Login y "Salir" cierra la aplicación. |
 
 ### 1.4 Tipos de usuario y matriz de permisos
@@ -133,7 +133,7 @@ vista  ──►  controlador  ──►  modelo.dao  ──►  Oracle (JDBC)
   ```
 
   Para los usuarios que no son administradores la expresión da `NULL` y Oracle no indexa los `NULL`, así que no cuentan. Para el administrador da `1`, y como el índice es único, un segundo administrador provoca el error `ORA-00001`. Aunque alguien intente insertarlo directamente desde SQL Developer, la base de datos no lo permite.
-- **Otras reglas:** el administrador no puede desactivarse ni quitarse el rol a sí mismo; un usuario inactivo (`UActivo = 0`) no puede ingresar; el Login se cierra después de 3 intentos fallidos y el mensaje de error no dice si lo que falló fue el usuario o la clave.
+- **Otras reglas:** el administrador no puede desactivarse, eliminarse ni quitarse el rol a sí mismo; un usuario que ya tiene registros en la Bitácora no se puede eliminar (la llave foránea lo impide con `ORA-02292`) y la aplicación ofrece desactivarlo para conservar su historial; un usuario inactivo (`UActivo = 0`) no puede ingresar; el Login se cierra después de 3 intentos fallidos y el mensaje de error no dice si lo que falló fue el usuario o la clave.
 - **Bitácora:** cada ingreso inserta una fila en `TBitacora` (fecha y hora de entrada con los valores por defecto de Oracle) y al cerrar sesión, salir o cerrar la ventana se completa la fecha y hora de salida. Hay un *shutdown hook* de respaldo por si la aplicación se cierra de otra forma.
 - **Inyección SQL:** todos los valores que escribe el usuario viajan como parámetros `?` de `PreparedStatement`; nunca se concatenan al SQL.
 
