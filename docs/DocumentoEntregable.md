@@ -34,6 +34,9 @@ Noviembre de 2026
 1. [Explicación general de la aplicación](#1-explicación-general-de-la-aplicación)
 2. [Diagrama Entidad-Relación](#2-diagrama-entidad-relación)
 3. [Diccionario de datos](#3-diccionario-de-datos)
+4. [Diagrama relacional normalizado](#4-diagrama-relacional-normalizado)
+5. [Consultas](#5-consultas)
+6. [Reportes](#6-reportes)
 
 ---
 
@@ -288,3 +291,111 @@ Restricciones adicionales de la tabla:
 
 - `ck_bitacora_salida_completa`: la fecha y la hora de salida van juntas (ambas `NULL` o ambas con valor).
 - `ck_bitacora_orden`: la salida no puede ser anterior al ingreso (si es el mismo día, la hora de salida debe ser mayor o igual; como la hora tiene formato fijo `HH24:MI:SS`, se puede comparar como texto).
+
+---
+
+## 4. Diagrama relacional normalizado
+
+![Relacional](DiagramaRelacional.png)
+
+En notación de texto (llave primaria **subrayada** en el diagrama, aquí en **negrita**; llaves foráneas con `#`):
+
+```
+TDepartamento (DCodigo, DNombre)
+TCiudad       (CCodigo, CNombre, #DCodigo)
+TCategoria    (CaCodigo, CaNombre, CaDescripcion)
+TProveedor    (PCodigo, PNit, PNombre, PDireccion, PCorreo, PTelefono, PActivo, #CCodigo)
+TProducto     (PrCodigo, PrNombre, PrDescripcion, PrPrecioBase, PrStock, #CaCodigo)
+TSuministro   (SCodigo, SDiasEntrega, SPrecio, #PCodigo, #PrCodigo)      UNIQUE(PCodigo, PrCodigo)
+TRol          (RCodigo, RNombre, RDescripcion)
+TUsuario      (UCodigo, UNombreUsuario, UContrasena, UActivo, UFechaCreacion, UNombreCompleto, #RCodigo)
+TBitacora     (BCodigo, BFechaIngreso, BHoraIngreso, BFechaSalida, BHoraSalida, #UCodigo)
+```
+
+Paso del modelo ER al relacional:
+
+- Cada **entidad** se convirtió en una tabla con su llave primaria.
+- Cada relación **1 : N** se convirtió en una llave foránea en la tabla del lado N (`TCiudad.DCodigo`, `TProveedor.CCodigo`, `TProducto.CaCodigo`, `TUsuario.RCodigo`, `TBitacora.UCodigo`).
+- La relación **N : M** entre Proveedor y Producto se convirtió en la tabla `TSuministro`, con una llave foránea hacia cada lado y sus atributos propios (precio y días de entrega).
+
+### 4.1 Justificación de la normalización
+
+**Primera Forma Normal (1FN).** Una tabla está en 1FN si todos sus atributos son atómicos (un solo valor por celda), no hay grupos repetitivos y cada fila se identifica por una llave primaria.
+
+- Todas las tablas tienen llave primaria.
+- No hay columnas con listas: por ejemplo, en lugar de guardar en el proveedor una lista de "productos que vende", cada pareja proveedor-producto es una fila de `TSuministro`.
+- La ubicación no se guarda como un texto "Armenia, Quindío", sino separada en `TCiudad` y `TDepartamento`.
+- La fecha y la hora de la bitácora se guardan en columnas separadas, cada una con un solo valor.
+
+**Segunda Forma Normal (2FN).** Está en 1FN y ningún atributo que no es llave depende solo de una parte de una llave compuesta.
+
+- Todas las tablas usan una llave primaria simple (una sola columna `...Codigo`), así que no puede existir dependencia parcial.
+- El caso a revisar es `TSuministro`, cuya llave candidata natural es compuesta: `(PCodigo, PrCodigo)`. Sus atributos `SPrecio` y `SDiasEntrega` dependen de **la pareja completa** (el precio y los días son de *ese* proveedor para *ese* producto), no solo del proveedor ni solo del producto. En cambio, el nombre del proveedor o el precio base del producto (que sí dependen de una sola parte) **no** están en `TSuministro`, sino en `TProveedor` y `TProducto`. Por eso cumple 2FN.
+
+**Tercera Forma Normal (3FN).** Está en 2FN y no hay dependencias transitivas: ningún atributo que no es llave depende de otro atributo que tampoco es llave.
+
+- `TProveedor` guarda solo `CCodigo`, no el nombre de la ciudad ni el del departamento. Si guardara `CNombre` y `DNombre`, estos dependerían de `CCodigo` (transitividad `PCodigo → CCodigo → CNombre`), y al cambiar el nombre de una ciudad habría que actualizar muchos proveedores. Por eso la ciudad y el departamento están en sus propias tablas.
+- Del mismo modo, `TCiudad` guarda solo `DCodigo` (no el nombre del departamento), `TProducto` guarda solo `CaCodigo` (no el nombre de la categoría), `TUsuario` guarda solo `RCodigo` (no el nombre del rol) y `TBitacora` guarda solo `UCodigo` (no el nombre del usuario).
+- No se guardan datos calculados: la diferencia entre el precio de suministro y el precio base, los promedios por categoría o la cantidad de proveedores de un producto se calculan en las consultas y reportes.
+
+Con esto el modelo queda en **3FN**: cada dato se guarda en un solo lugar, y los nombres que se ven juntos en la aplicación se obtienen con JOIN.
+
+---
+
+## 5. Consultas
+
+El enunciado pide:
+
+> - Tres consultas con **JOIN** que junten al menos datos de **3 tablas**.
+> - Dos consultas que posean **subconsultas** y que relacionen **dos tablas**.
+
+Están en `modelo/dao/ConsultaDAO.java` y se ejecutan desde **Reportes/Consultas → Consultas** (las pueden usar los tres roles). El SQL completo y la justificación de cada una están en el documento [`Consultas.md`](Consultas.md); aquí va el resumen:
+
+| # | Consulta | Tipo | Tablas | Requisito que cumple |
+|---|----------|------|--------|----------------------|
+| a | Proveedores con ciudad y departamento | JOIN | TProveedor, TCiudad, TDepartamento | JOIN de 3 tablas (1 de 3) |
+| b | Productos con proveedores y precio de suministro (y diferencia con el precio base) | JOIN | TProducto, TSuministro, TProveedor | JOIN de 3 tablas (2 de 3) |
+| c | Productos por categoría y proveedor, con stock y días de entrega | JOIN | TProducto, TCategoria, TSuministro, TProveedor | JOIN de 4 tablas (3 de 3) |
+| d | Productos con precio base mayor al promedio de su categoría | Subconsulta correlacionada en el `WHERE` + subconsulta escalar en el `SELECT` | TProducto, TCategoria | Subconsulta que relaciona 2 tablas (1 de 2) |
+| e | Proveedores sin suministros | Subconsulta con `NOT EXISTS` | TProveedor, TSuministro | Subconsulta que relaciona 2 tablas (2 de 2) |
+
+Ejemplo (consulta d):
+
+```sql
+SELECT ca.CaNombre, pr.PrNombre, pr.PrPrecioBase,
+       (SELECT ROUND(AVG(p3.PrPrecioBase), 2)
+          FROM TProducto p3
+         WHERE p3.CaCodigo = pr.CaCodigo) AS PromedioCategoria
+FROM TProducto pr
+JOIN TCategoria ca ON ca.CaCodigo = pr.CaCodigo
+WHERE pr.PrPrecioBase > (SELECT AVG(p2.PrPrecioBase)
+                           FROM TProducto p2
+                          WHERE p2.CaCodigo = pr.CaCodigo)
+ORDER BY ca.CaNombre, pr.PrPrecioBase DESC;
+```
+
+---
+
+## 6. Reportes
+
+El enunciado pide reportes en PDF (o en una herramienta de reportes) **mostrados dentro de un formulario de la aplicación**:
+
+> - **Tres** reportes diferentes con los datos **filtrados por el usuario**, de productos y proveedores.
+> - **Dos** reportes que relacionen los **Productos con sus Categorías** y que los pueda filtrar el usuario.
+
+Se generan desde **Reportes/Consultas → Reportes** (una pestaña por reporte). El usuario elige los filtros, pulsa **Generar PDF** y escoge dónde guardar el archivo; el PDF se crea con PDFBox (`util/GeneradorPDF`) y se abre en un visor dentro de la aplicación (`vista/reportes/VisorPDF`), con paginación y zoom. Las consultas están en `modelo/dao/ReporteDAO.java`; los filtros opcionales se agregan al `WHERE` siempre como parámetros `?`.
+
+| # | Reporte | Filtros del usuario | Tablas | Requisito que cumple |
+|---|---------|---------------------|--------|----------------------|
+| 1 | **Proveedores por departamento y ciudad** | Departamento (o todos) y ciudad (o todas) | TProveedor, TCiudad, TDepartamento | Reporte filtrado de **proveedores** (1 de 3) |
+| 2 | **Productos por rango de precio y stock** | Precio mínimo/máximo y stock mínimo/máximo (todos opcionales) | TProducto, TCategoria | Reporte filtrado de **productos** (2 de 3) |
+| 3 | **Productos suministrados por un proveedor** | Proveedor | TSuministro, TProducto, TCategoria | Reporte filtrado de **productos y proveedores** (3 de 3). Incluye fila de totales y promedio de días de entrega. |
+| 4 | **Productos por categoría** | Categoría | TProducto, TSuministro (LEFT JOIN para contar proveedores) | Reporte de **productos con su categoría** filtrado (1 de 2) |
+| 5 | **Resumen de productos por categoría** | Categoría (o todas) | TCategoria, TProducto (LEFT JOIN) | Reporte de **productos con su categoría** filtrado (2 de 2): cantidad de productos, precio promedio, mínimo y máximo, y stock total, con fila de totales. |
+
+Detalles:
+
+- En el reporte 1, el combo de ciudades depende del departamento elegido, y el controlador valida que la ciudad pertenezca al departamento.
+- En el reporte 2 se valida que los valores no sean negativos y que el mínimo no sea mayor que el máximo.
+- Los reportes 4 y 5 usan `LEFT JOIN` para que también aparezcan los productos sin proveedores y las categorías sin productos (con 0).
+- Cada PDF lleva título, los filtros aplicados y la cantidad de registros en el subtítulo, un pie con la fecha y hora de generación, el usuario que lo generó y "Página X de Y", y los valores con formato colombiano (`$ 28.900,00`).
