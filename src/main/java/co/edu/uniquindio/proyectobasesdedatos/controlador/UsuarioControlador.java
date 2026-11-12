@@ -181,6 +181,42 @@ public class UsuarioControlador {
 
     // ------------------------------------------------------- Apoyo interno
 
+    /**
+     * Elimina un usuario. No se permite eliminar al Administrador ni al usuario
+     * que tiene la sesión abierta. Si el usuario ya tiene registros en la
+     * Bitácora se lanza {@link UsuarioConBitacoraException} para que la vista
+     * ofrezca desactivarlo en su lugar.
+     *
+     * @param codigo UCodigo del usuario
+     */
+    public void eliminar(int codigo) throws ControladorException {
+        verificarPermiso();
+        if (codigo <= 0) {
+            throw new ControladorException("Seleccione un usuario de la tabla.");
+        }
+        if (esUsuarioEnSesion(codigo)) {
+            throw new ControladorException("No puede eliminar su propio usuario.");
+        }
+        try {
+            UsuarioDTO actual = usuarioDAO.buscarPorCodigo(codigo);
+            if (actual == null) {
+                throw new ControladorException("El usuario ya no existe.");
+            }
+            if (actual.getCodigoRol() == RolDTO.ADMINISTRADOR) {
+                throw new ControladorException("No se puede eliminar al administrador.");
+            }
+            if (!usuarioDAO.eliminar(codigo)) {
+                throw new ControladorException("El usuario ya no existe.");
+            }
+        } catch (SQLException e) {
+            if (ErroresBD.tieneRegistrosAsociados(e)) {
+                throw new UsuarioConBitacoraException(
+                        "No se puede eliminar el usuario porque tiene registros en la Bitácora.", e);
+            }
+            throw new ControladorException(ErroresBD.traducir(e), e);
+        }
+    }
+
     private void verificarPermiso() throws ControladorException {
         if (!Sesion.puedeGestionarUsuarios()) {
             throw new ControladorException("Solo el administrador puede gestionar usuarios.");

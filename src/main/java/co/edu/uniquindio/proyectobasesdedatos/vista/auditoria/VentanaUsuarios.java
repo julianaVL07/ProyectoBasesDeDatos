@@ -1,6 +1,7 @@
 package co.edu.uniquindio.proyectobasesdedatos.vista.auditoria;
 
 import co.edu.uniquindio.proyectobasesdedatos.controlador.ControladorException;
+import co.edu.uniquindio.proyectobasesdedatos.controlador.UsuarioConBitacoraException;
 import co.edu.uniquindio.proyectobasesdedatos.controlador.UsuarioControlador;
 import co.edu.uniquindio.proyectobasesdedatos.modelo.dto.RolDTO;
 import co.edu.uniquindio.proyectobasesdedatos.modelo.dto.UsuarioDTO;
@@ -34,10 +35,11 @@ import java.util.List;
  * Ventana interna de Gestión de Usuarios (módulo Auditoría, solo Administrador).
  *
  * <p>Permite crear usuarios (con contraseña y confirmación), editar sus datos,
- * cambiarles la contraseña y activarlos o desactivarlos. No hay botón de
- * eliminar: un usuario con registros en la Bitácora se desactiva para
- * conservar su historial. Si ya existe un Administrador, ese rol no se ofrece
- * en el combo.</p>
+ * cambiarles la contraseña, activarlos o desactivarlos y eliminarlos. Un
+ * usuario con registros en la Bitácora no se puede borrar: se ofrece
+ * desactivarlo para conservar su historial. No se puede eliminar al
+ * Administrador ni al usuario en sesión. Si ya existe un Administrador, ese
+ * rol no se ofrece en el combo.</p>
  */
 public class VentanaUsuarios extends JInternalFrame {
 
@@ -59,6 +61,7 @@ public class VentanaUsuarios extends JInternalFrame {
     private final JButton btnActualizar = new JButton("Actualizar");
     private final JButton btnCambiarClave = new JButton("Cambiar contraseña");
     private final JButton btnEstado = new JButton("Desactivar");
+    private final JButton btnEliminar = new JButton("Eliminar");
     private final JButton btnLimpiar = new JButton("Limpiar");
 
     // Tabla
@@ -90,6 +93,7 @@ public class VentanaUsuarios extends JInternalFrame {
         btnActualizar.addActionListener(e -> actualizar());
         btnCambiarClave.addActionListener(e -> cambiarClave());
         btnEstado.addActionListener(e -> cambiarEstado());
+        btnEliminar.addActionListener(e -> eliminar());
         tabla.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 seleccionarFila();
@@ -130,6 +134,7 @@ public class VentanaUsuarios extends JInternalFrame {
         botones.add(btnActualizar);
         botones.add(btnCambiarClave);
         botones.add(btnEstado);
+        botones.add(btnEliminar);
         botones.add(btnLimpiar);
         panel.add(botones, BorderLayout.SOUTH);
         return panel;
@@ -270,6 +275,8 @@ public class VentanaUsuarios extends JInternalFrame {
         btnCambiarClave.setEnabled(editando);
         btnEstado.setEnabled(editando && !esYo);
         btnEstado.setText(editando && !seleccionado.isActivo() ? "Activar" : "Desactivar");
+        boolean esAdmin = editando && seleccionado.getCodigoRol() == RolDTO.ADMINISTRADOR;
+        btnEliminar.setEnabled(editando && !esYo && !esAdmin);
     }
 
     /** Arma un DTO con lo escrito en el formulario (conserva código y estado si se edita). */
@@ -373,6 +380,46 @@ public class VentanaUsuarios extends JInternalFrame {
             UtilVista.mostrarInfo(this, "Usuario " + (activar ? "activado" : "desactivado") + " correctamente.");
             cargarDatos();
             limpiarFormulario();
+        } catch (ControladorException e) {
+            UtilVista.mostrarError(this, e.getMessage());
+        }
+    }
+
+    /**
+     * Elimina el usuario seleccionado. Si tiene registros en la Bitácora no se
+     * puede borrar y se ofrece desactivarlo (si todavía está activo).
+     */
+    private void eliminar() {
+        if (seleccionado == null) {
+            return;
+        }
+        if (!UtilVista.confirmar(this, "¿Desea eliminar al usuario «"
+                + seleccionado.getNombreUsuario() + "»?\nEsta acción no se puede deshacer.")) {
+            return;
+        }
+        try {
+            controlador.eliminar(seleccionado.getCodigo());
+            UtilVista.mostrarInfo(this, "Usuario eliminado correctamente.");
+            cargarDatos();
+            limpiarFormulario();
+        } catch (UsuarioConBitacoraException e) {
+            if (!seleccionado.isActivo()) {
+                UtilVista.mostrarError(this, e.getMessage() + "\nEl usuario ya está inactivo.");
+                return;
+            }
+            boolean desactivar = UtilVista.confirmar(this, e.getMessage()
+                    + "\n¿Desea desactivarlo en su lugar? Conservará su historial,"
+                    + " pero ya no podrá ingresar a la aplicación.");
+            if (desactivar) {
+                try {
+                    controlador.cambiarEstado(seleccionado.getCodigo(), false);
+                    UtilVista.mostrarInfo(this, "Usuario desactivado correctamente.");
+                    cargarDatos();
+                    limpiarFormulario();
+                } catch (ControladorException ex) {
+                    UtilVista.mostrarError(this, ex.getMessage());
+                }
+            }
         } catch (ControladorException e) {
             UtilVista.mostrarError(this, e.getMessage());
         }
