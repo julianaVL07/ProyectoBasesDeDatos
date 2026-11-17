@@ -46,7 +46,7 @@ public class VentanaProveedores extends VentanaCrud<ProveedorDTO> {
     private List<CiudadDTO> ciudades = new ArrayList<>();
 
     public VentanaProveedores() {
-        super("Proveedores", "Código", "NIT", "Nombre", "Ciudad", "Teléfono", "Correo", "Activo");
+        super("Proveedores", "Código", "NIT", "Nombre", "Dirección", "Ciudad", "Teléfono", "Correo", "Activo");
         setSize(900, 600);
         txtCodigo.setEditable(false);
         cmbDepartamento.addActionListener(e -> filtrarCiudades());
@@ -85,10 +85,10 @@ public class VentanaProveedores extends VentanaCrud<ProveedorDTO> {
         tabla.getColumnModel().getColumn(0).setMaxWidth(60);
         tabla.getColumnModel().getColumn(1).setPreferredWidth(110);
         tabla.getColumnModel().getColumn(2).setPreferredWidth(200);
-        tabla.getColumnModel().getColumn(3).setPreferredWidth(120);
-        tabla.getColumnModel().getColumn(4).setPreferredWidth(100);
-        tabla.getColumnModel().getColumn(5).setPreferredWidth(180);
-        tabla.getColumnModel().getColumn(6).setMaxWidth(60);
+        tabla.getColumnModel().getColumn(4).setPreferredWidth(120);
+        tabla.getColumnModel().getColumn(5).setPreferredWidth(100);
+        tabla.getColumnModel().getColumn(6).setPreferredWidth(180);
+        tabla.getColumnModel().getColumn(7).setMaxWidth(60);
     }
 
     /** Antes de recargar la tabla se refrescan los combos (pueden haber creado ciudades). */
@@ -133,7 +133,8 @@ public class VentanaProveedores extends VentanaCrud<ProveedorDTO> {
 
     @Override
     protected Object[] aFila(ProveedorDTO p) {
-        return new Object[]{p.getCodigo(), p.getNit(), p.getNombre(), p.getNombreCiudad(),
+        return new Object[]{p.getCodigo(), p.getNit(), p.getNombre(),
+                p.getDireccion() == null ? "" : p.getDireccion(), p.getNombreCiudad(),
                 p.getTelefono(), p.getCorreo(), p.isActivo() ? "Sí" : "No"};
     }
 
