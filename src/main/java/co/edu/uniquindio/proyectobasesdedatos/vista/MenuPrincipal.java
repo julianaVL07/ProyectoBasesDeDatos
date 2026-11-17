@@ -32,6 +32,9 @@ import javax.swing.JSeparator;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.GradientPaint;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.beans.PropertyVetoException;
@@ -53,7 +56,20 @@ import java.beans.PropertyVetoException;
  */
 public class MenuPrincipal extends JFrame {
 
-    private final JDesktopPane escritorio = new JDesktopPane();
+    /**
+     * Escritorio con el mismo degradado lila -> azul de la franja del Login. Se
+     * pinta con el tamaño actual en cada repintado, así cubre todo el panel al
+     * redimensionar o maximizar la ventana.
+     */
+    private final JDesktopPane escritorio = new JDesktopPane() {
+        @Override
+        protected void paintComponent(Graphics g) {
+            Graphics2D g2 = (Graphics2D) g.create();
+            g2.setPaint(new GradientPaint(0, 0, Tema.LILA, getWidth(), 0, Tema.AZUL));
+            g2.fillRect(0, 0, getWidth(), getHeight());
+            g2.dispose();
+        }
+    };
     private final JLabel lblEstado = new JLabel();
     private final LoginControlador loginControlador = new LoginControlador();
 
