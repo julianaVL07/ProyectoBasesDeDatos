@@ -24,6 +24,8 @@ import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JViewport;
 import javax.swing.RootPaneContainer;
+import javax.swing.UIManager;
+import javax.swing.plaf.FontUIResource;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.TitledBorder;
@@ -47,6 +49,7 @@ import javax.swing.text.JTextComponent;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -56,7 +59,8 @@ import java.awt.Rectangle;
 /**
  * Paleta pastel de la aplicación (la misma de los diagramas draw.io del
  * proyecto) y el método {@link #aplicar(Container)}, que la aplica a una
- * ventana. Solo cambia apariencia: no toca textos, tamaños ni layouts.
+ * ventana. Solo cambia apariencia: no toca textos, tamaños ni layouts. La
+ * fuente de toda la interfaz se cambia aparte con {@link #aplicarFuente()}.
  *
  * <p>Cada módulo tiene su color (barra de título y fondo claro): Entidades
  * rosa, Transacciones durazno, Consultas/Reportes verde, Auditoría azul y
@@ -676,6 +680,42 @@ public final class Tema {
             BasicGraphicsUtils.drawStringUnderlineCharAt(b, (Graphics2D) g, texto,
                     b.getDisplayedMnemonicIndex(), r.x + desplazamiento, r.y + fm.getAscent() + desplazamiento);
         }
+    }
+
+    // ------------------------------------------------------------------ Fuente
+
+    /** Familia de letra de la interfaz. */
+    public static final String FAMILIA_FUENTE = "Segoe UI";
+
+    /**
+     * Cambia la familia de todas las fuentes de UIManager (claves *.font) a
+     * Segoe UI, conservando tamaño y estilo. Se llama una vez al iniciar,
+     * después de aplicar el Look and Feel. Si Segoe UI no está instalada no hace
+     * nada, y nunca cambia las fuentes monoespaciadas.
+     */
+    public static void aplicarFuente() {
+        boolean existe = java.util.Arrays.asList(java.awt.GraphicsEnvironment
+                .getLocalGraphicsEnvironment().getAvailableFontFamilyNames()).contains(FAMILIA_FUENTE);
+        if (!existe) {
+            return;
+        }
+        java.util.List<Object> claves = new java.util.ArrayList<>(
+                java.util.Collections.list(UIManager.getLookAndFeelDefaults().keys()));
+        for (Object clave : claves) {
+            if (!(clave instanceof String nombre) || !nombre.endsWith(".font")) {
+                continue;
+            }
+            if (UIManager.get(clave) instanceof Font fuente && !esMonoespaciada(fuente)) {
+                UIManager.put(clave, new FontUIResource(FAMILIA_FUENTE, fuente.getStyle(), fuente.getSize()));
+            }
+        }
+    }
+
+    private static boolean esMonoespaciada(Font fuente) {
+        String familia = (fuente.getFamily() + " " + fuente.getName()).toLowerCase();
+        return familia.contains("monospaced") || familia.contains("mono")
+                || familia.contains("courier") || familia.contains("consolas")
+                || familia.contains("lucida console");
     }
 
     // --------------------------------------------------------------- Utilidades
