@@ -18,6 +18,9 @@ import java.awt.BorderLayout;
 import java.awt.Cursor;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.GradientPaint;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -78,10 +81,20 @@ public class VentanaLogin extends JDialog {
     // ----------------------------------------------------------------- Paneles
 
     private JPanel crearEncabezado() {
-        JPanel panel = new JPanel(new BorderLayout());
+        // Franja superior con degradado lila -> azul detrás del título.
+        JPanel panel = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setPaint(new GradientPaint(0, 0, Tema.LILA, getWidth(), 0, Tema.AZUL));
+                g2.fillRect(0, 0, getWidth(), getHeight());
+                g2.dispose();
+            }
+        };
         panel.setBorder(BorderFactory.createEmptyBorder(15, 20, 5, 20));
         JLabel titulo = new JLabel("Gestión de Proveedores", SwingConstants.CENTER);
         titulo.setFont(titulo.getFont().deriveFont(Font.BOLD, 16f));
+        titulo.setForeground(Tema.LILA_BORDE);
         panel.add(titulo, BorderLayout.CENTER);
         panel.add(new JLabel("Ingrese sus credenciales", SwingConstants.CENTER), BorderLayout.SOUTH);
         return panel;
@@ -89,7 +102,13 @@ public class VentanaLogin extends JDialog {
 
     private JPanel crearFormulario() {
         JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(10, 20, 5, 20));
+        // Borde fino lila alrededor de los campos. Los márgenes suman lo mismo que
+        // el EmptyBorder(10, 20, 5, 20) original, así el tamaño de la ventana no cambia.
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createEmptyBorder(4, 14, 0, 14),
+                BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(Tema.LILA_BORDE),
+                        BorderFactory.createEmptyBorder(5, 5, 4, 5))));
         panel.add(new JLabel("Usuario:"), celda(0, 0));
         panel.add(txtUsuario, celda(1, 0));
         panel.add(new JLabel("Contraseña:"), celda(0, 1));
