@@ -37,8 +37,12 @@ import javax.swing.plaf.basic.BasicMenuBarUI;
 import javax.swing.plaf.basic.BasicMenuItemUI;
 import javax.swing.plaf.basic.BasicPopupMenuUI;
 import javax.swing.plaf.basic.BasicTabbedPaneUI;
+import javax.swing.event.TableColumnModelEvent;
+import javax.swing.event.TableColumnModelListener;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
 import javax.swing.text.JTextComponent;
 import java.awt.Color;
 import java.awt.Component;
@@ -375,6 +379,7 @@ public final class Tema {
         tabla.setSelectionBackground(AZUL);
         tabla.setSelectionForeground(TEXTO);
         tabla.setGridColor(LILA);
+        instalarFilasAlternas(tabla);
         JTableHeader encabezado = tabla.getTableHeader();
         if (encabezado != null) {
             encabezado.setBackground(ROSA);
@@ -383,6 +388,141 @@ public final class Tema {
             if (!(actual instanceof RenderizadorEncabezado)) {
                 encabezado.setDefaultRenderer(new RenderizadorEncabezado(actual));
             }
+        }
+    }
+
+    // ------------------------------------------------------------ Filas alternas
+
+    /** Fila impar: lila muy claro (la par queda blanca). */
+    public static final Color FILA_ALTERNA = FONDO;
+    private static final String FILAS_LISTAS = "tema.filasAlternas";
+    private static final Class<?>[] CLASES_RENDERER = {
+            Object.class, Number.class, Float.class, Double.class, java.util.Date.class,
+            javax.swing.Icon.class, javax.swing.ImageIcon.class, Boolean.class};
+
+    /**
+     * Pone filas alternas blanco / lila muy claro envolviendo el renderer que
+     * ya tiene cada columna, así se conservan sus formatos (precios, alineación,
+     * etc.). También envuelve los renderers que se pongan después (p. ej.
+     * Consultas crea columnas y renderers nuevos en cada ejecución).
+     */
+    private static void instalarFilasAlternas(JTable tabla) {
+        if (tabla.getClientProperty(FILAS_LISTAS) != null) {
+            return;
+        }
+        tabla.putClientProperty(FILAS_LISTAS, Boolean.TRUE);
+
+        for (Class<?> clase : CLASES_RENDERER) {
+            TableCellRenderer actual = tabla.getDefaultRenderer(clase);
+            if (actual != null && !(actual instanceof RenderizadorAlterno)) {
+                tabla.setDefaultRenderer(clase, new RenderizadorAlterno(actual));
+            }
+        }
+
+        TableColumnModelListener oyente = new TableColumnModelAdapter() {
+            @Override
+            public void columnAdded(TableColumnModelEvent e) {
+                TableColumnModel modelo = (TableColumnModel) e.getSource();
+                envolverColumna(modelo.getColumn(e.getToIndex()));
+            }
+        };
+        TableColumnModel columnas = tabla.getColumnModel();
+        columnas.addColumnModelListener(oyente);
+        for (int i = 0; i < columnas.getColumnCount(); i++) {
+            envolverColumna(columnas.getColumn(i));
+        }
+        // Si la tabla cambia de modelo de columnas, se vigila el nuevo.
+        tabla.addPropertyChangeListener("columnModel", e -> {
+            if (e.getOldValue() instanceof TableColumnModel viejo) {
+                viejo.removeColumnModelListener(oyente);
+            }
+            if (e.getNewValue() instanceof TableColumnModel nuevo) {
+                nuevo.addColumnModelListener(oyente);
+                for (int i = 0; i < nuevo.getColumnCount(); i++) {
+                    envolverColumna(nuevo.getColumn(i));
+                }
+            }
+        });
+    }
+
+    /** Envuelve el renderer propio de la columna (si tiene) y el que se le ponga después. */
+    private static void envolverColumna(TableColumn columna) {
+        TableCellRenderer actual = columna.getCellRenderer();
+        if (actual != null && !(actual instanceof RenderizadorAlterno)) {
+            columna.setCellRenderer(new RenderizadorAlterno(actual));
+        }
+        for (java.beans.PropertyChangeListener l : columna.getPropertyChangeListeners()) {
+            if (l instanceof OyenteRendererColumna) {
+                return;
+            }
+        }
+        columna.addPropertyChangeListener(new OyenteRendererColumna(columna));
+    }
+
+    private record OyenteRendererColumna(TableColumn columna) implements java.beans.PropertyChangeListener {
+        @Override
+        public void propertyChange(java.beans.PropertyChangeEvent e) {
+            if ("cellRenderer".equals(e.getPropertyName())
+                    && e.getNewValue() instanceof TableCellRenderer nuevo
+                    && !(nuevo instanceof RenderizadorAlterno)) {
+                columna.setCellRenderer(new RenderizadorAlterno(nuevo));
+            }
+        }
+    }
+
+    /**
+     * Pide la celda al renderer original y solo cambia el fondo de las filas no
+     * seleccionadas. Si el renderer original eligió un fondo propio (distinto al
+     * de la tabla), lo respeta.
+     */
+    private static final class RenderizadorAlterno implements TableCellRenderer {
+
+        private final TableCellRenderer original;
+
+        RenderizadorAlterno(TableCellRenderer original) {
+            this.original = original;
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable tabla, Object valor, boolean seleccionada,
+                                                       boolean foco, int fila, int columna) {
+            Component c = original.getTableCellRendererComponent(tabla, valor, seleccionada, foco, fila, columna);
+            if (!seleccionada && esFondoNormal(c.getBackground(), tabla)) {
+                c.setBackground(fila % 2 == 0 ? Color.WHITE : FILA_ALTERNA);
+            }
+            return c;
+        }
+
+        /**
+         * DefaultTableCellRenderer recuerda el último fondo que se le puso, por eso
+         * también se aceptan los dos colores de las filas alternas como "normales".
+         */
+        private static boolean esFondoNormal(Color fondo, JTable tabla) {
+            return fondo != null && (fondo.equals(tabla.getBackground())
+                    || fondo.equals(Color.WHITE) || fondo.equals(FILA_ALTERNA));
+        }
+    }
+
+    /** Adaptador vacío de TableColumnModelListener (Swing no trae uno). */
+    private abstract static class TableColumnModelAdapter implements TableColumnModelListener {
+        @Override
+        public void columnAdded(TableColumnModelEvent e) {
+        }
+
+        @Override
+        public void columnRemoved(TableColumnModelEvent e) {
+        }
+
+        @Override
+        public void columnMoved(TableColumnModelEvent e) {
+        }
+
+        @Override
+        public void columnMarginChanged(javax.swing.event.ChangeEvent e) {
+        }
+
+        @Override
+        public void columnSelectionChanged(javax.swing.event.ListSelectionEvent e) {
         }
     }
 
