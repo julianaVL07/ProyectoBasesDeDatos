@@ -16,8 +16,8 @@
 
 **Integrantes:**
 
-Juliana Villota López
-Sara Sofia Bolaños Pelayo
+Juliana Villota López<br>
+Sara Sofia Bolaños Pelayo<br>
 Santiago Arias Rodriguez
 
 <br>
