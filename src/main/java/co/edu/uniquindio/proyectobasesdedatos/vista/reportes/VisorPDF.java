@@ -72,7 +72,7 @@ public class VisorPDF extends JInternalFrame {
 
         lblImagen.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         JScrollPane scroll = new JScrollPane(lblImagen);
-        scroll.getViewport().setBackground(Tema.LILA_BORDE);
+        scroll.getViewport().setBackground(Tema.VERDE_BORDE);
         scroll.getVerticalScrollBar().setUnitIncrement(20);
         scroll.getHorizontalScrollBar().setUnitIncrement(20);
         getContentPane().add(scroll, BorderLayout.CENTER);

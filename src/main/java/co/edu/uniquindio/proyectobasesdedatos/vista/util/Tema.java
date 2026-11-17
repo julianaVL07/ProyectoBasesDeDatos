@@ -7,14 +7,21 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JDesktopPane;
+import javax.swing.JInternalFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JSpinner;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
+import javax.swing.JTextArea;
 import javax.swing.JViewport;
 import javax.swing.RootPaneContainer;
 import javax.swing.border.Border;
@@ -25,6 +32,11 @@ import javax.swing.plaf.basic.BasicArrowButton;
 import javax.swing.plaf.basic.BasicButtonUI;
 import javax.swing.plaf.basic.BasicGraphicsUtils;
 import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
+import javax.swing.plaf.basic.BasicInternalFrameUI;
+import javax.swing.plaf.basic.BasicMenuBarUI;
+import javax.swing.plaf.basic.BasicMenuItemUI;
+import javax.swing.plaf.basic.BasicPopupMenuUI;
+import javax.swing.plaf.basic.BasicTabbedPaneUI;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.text.JTextComponent;
@@ -40,7 +52,11 @@ import java.awt.Rectangle;
 /**
  * Paleta pastel de la aplicación (la misma de los diagramas draw.io del
  * proyecto) y el método {@link #aplicar(Container)}, que la aplica a una
- * ventana. Solo cambia colores: no toca textos, tamaños, layouts ni fuentes.
+ * ventana. Solo cambia apariencia: no toca textos, tamaños ni layouts.
+ *
+ * <p>Cada módulo tiene su color (barra de título y fondo claro): Entidades
+ * rosa, Transacciones durazno, Consultas/Reportes verde, Auditoría azul y
+ * Login/menú principal lila.</p>
  */
 public final class Tema {
 
@@ -84,22 +100,78 @@ public final class Tema {
         barra.putClientProperty(ROL, ROL_BARRA_ESTADO);
     }
 
+    // ----------------------------------------------------------------- Módulos
+
+    /** Colores de un módulo: el de la barra de título, su borde y el fondo muy claro. */
+    private record Modulo(Color base, Color borde, Color fondo) {
+    }
+
+    private static final Modulo ENTIDADES = new Modulo(ROSA, ROSA_BORDE, mezclar(ROSA, Color.WHITE, 0.65));
+    private static final Modulo TRANSACCIONES = new Modulo(DURAZNO, DURAZNO_BORDE, mezclar(DURAZNO, Color.WHITE, 0.6));
+    private static final Modulo CONSULTAS = new Modulo(VERDE, VERDE_BORDE, mezclar(VERDE, Color.WHITE, 0.6));
+    private static final Modulo AUDITORIA = new Modulo(AZUL, AZUL_BORDE, mezclar(AZUL, Color.WHITE, 0.55));
+    private static final Modulo PRINCIPAL = new Modulo(LILA, LILA_BORDE, FONDO);
+
+    /** El módulo sale del paquete de la ventana (vista.entidades, vista.auditoria, ...). */
+    private static Modulo moduloDe(Object ventana) {
+        String paquete = ventana.getClass().getPackageName();
+        if (paquete.endsWith(".entidades")) {
+            return ENTIDADES;
+        } else if (paquete.endsWith(".transacciones")) {
+            return TRANSACCIONES;
+        } else if (paquete.endsWith(".consultas") || paquete.endsWith(".reportes")) {
+            return CONSULTAS;
+        } else if (paquete.endsWith(".auditoria")) {
+            return AUDITORIA;
+        }
+        return PRINCIPAL; // Login y menú principal
+    }
+
+    // ------------------------------------------------------------- Recorrido
+
     /**
-     * Recorre recursivamente los componentes de {@code raiz} y les aplica los
-     * colores del tema. Se puede llamar varias veces sobre la misma ventana.
+     * Aplica los colores del tema a una ventana (JFrame, JDialog o
+     * JInternalFrame) o a cualquier contenedor. Se puede llamar varias veces
+     * sobre la misma ventana.
      */
     public static void aplicar(Container raiz) {
         if (raiz == null) {
             return;
         }
-        if (raiz instanceof RootPaneContainer ventana) {
-            aplicar(ventana.getContentPane());
+        if (raiz instanceof JInternalFrame ventana) {
+            Modulo modulo = moduloDe(ventana);
+            colorearVentanaInterna(ventana, modulo);
+            recorrer(ventana.getContentPane(), modulo.fondo());
+        } else if (raiz instanceof RootPaneContainer ventana) {
+            Modulo modulo = moduloDe(ventana);
+            JMenuBar barra = ventana.getRootPane().getJMenuBar();
+            if (barra != null) {
+                colorearBarraMenu(barra);
+            }
+            recorrer(ventana.getContentPane(), modulo.fondo());
+        } else {
+            recorrer(raiz, FONDO);
+        }
+    }
+
+    /** Recorre recursivamente los componentes y solo cambia colores. */
+    private static void recorrer(Container raiz, Color fondo) {
+        if (raiz == null) {
+            return;
+        }
+        if (raiz instanceof JInternalFrame interna) {
+            aplicar(interna); // cada ventana interna usa el color de su módulo
             return;
         }
         if (raiz instanceof JComponent c) {
             colorearTitulo(c.getBorder());
         }
 
+        // Texto de solo lectura usado como etiqueta (p. ej. la descripción de Consultas).
+        if (raiz instanceof JTextArea area && !area.isEditable()) {
+            area.setBackground(fondo);
+            return;
+        }
         // Componentes que no se tocan (ni sus hijos internos, como flechas o editores).
         if (raiz instanceof JTextComponent || raiz instanceof JComboBox
                 || raiz instanceof JSpinner || raiz instanceof JScrollBar
@@ -110,7 +182,7 @@ public final class Tema {
         if (raiz instanceof JDesktopPane escritorio) {
             escritorio.setBackground(LILA);
         } else if (raiz instanceof JPanel panel) {
-            panel.setBackground(ROL_BARRA_ESTADO.equals(panel.getClientProperty(ROL)) ? AZUL : FONDO);
+            panel.setBackground(ROL_BARRA_ESTADO.equals(panel.getClientProperty(ROL)) ? AZUL : fondo);
         } else if (raiz instanceof JTable tabla) {
             colorearTabla(tabla);
             return;
@@ -121,7 +193,7 @@ public final class Tema {
                 viewport.setBackground(Color.WHITE);
             }
         } else if (raiz instanceof JTabbedPane pestanas) {
-            pestanas.setBackground(FONDO);
+            colorearPestanas(pestanas, fondo);
         } else if (raiz instanceof JButton boton && !(boton instanceof BasicArrowButton)
                 && !(boton instanceof UIResource)) {
             colorearBoton(boton);
@@ -130,8 +202,157 @@ public final class Tema {
 
         for (Component hijo : raiz.getComponents()) {
             if (hijo instanceof Container contenedor) {
-                aplicar(contenedor);
+                recorrer(contenedor, fondo);
             }
+        }
+    }
+
+    // -------------------------------------------------------- Ventanas internas
+
+    /**
+     * Barra de título del color del módulo y texto oscuro. Windows pinta su
+     * propia barra e ignora los colores, por eso se cambia SOLO el UI de la
+     * ventana por la versión Basic; los botones de minimizar/maximizar/cerrar
+     * son los mismos de Swing y funcionan igual.
+     */
+    private static void colorearVentanaInterna(JInternalFrame ventana, Modulo modulo) {
+        ventana.putClientProperty(TITULO_COLOR, modulo.base());
+        if (!(ventana.getUI() instanceof VentanaInternaUI)) {
+            ventana.setUI(new VentanaInternaUI(ventana));
+        }
+        ventana.setBackground(modulo.fondo());
+        ventana.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(modulo.borde()),
+                BorderFactory.createMatteBorder(3, 3, 3, 3, modulo.base())));
+    }
+
+    /** Color de la barra de título, guardado en la ventana (la barra lo lee al crearse). */
+    private static final String TITULO_COLOR = "tema.tituloColor";
+
+    private static final class VentanaInternaUI extends BasicInternalFrameUI {
+
+        VentanaInternaUI(JInternalFrame ventana) {
+            super(ventana);
+        }
+
+        @Override
+        protected JComponent createNorthPane(JInternalFrame ventana) {
+            return new BarraTitulo(ventana);
+        }
+    }
+
+    private static final class BarraTitulo extends BasicInternalFrameTitlePane {
+
+        BarraTitulo(JInternalFrame ventana) {
+            super(ventana);
+        }
+
+        @Override
+        protected void installDefaults() {
+            super.installDefaults();
+            Color base = frame.getClientProperty(TITULO_COLOR) instanceof Color c ? c : LILA;
+            selectedTitleColor = base;
+            notSelectedTitleColor = mezclar(base, Color.WHITE, 0.45);
+            selectedTextColor = TEXTO_OSCURO;
+            notSelectedTextColor = TEXTO_OSCURO;
+        }
+    }
+
+    // --------------------------------------------------------------- Pestañas
+
+    private static final Color[] PESTANA_BASE = {ROSA, VERDE, AZUL, LILA, DURAZNO};
+    private static final Color[] PESTANA_BORDE = {ROSA_BORDE, VERDE_BORDE, AZUL_BORDE, LILA_BORDE, DURAZNO_BORDE};
+
+    /** Cada pestaña de un color de la paleta; Windows los ignora, por eso se usa la versión Basic. */
+    private static void colorearPestanas(JTabbedPane pestanas, Color fondo) {
+        if (!(pestanas.getUI() instanceof PestanasUI)) {
+            pestanas.setUI(new PestanasUI());
+        }
+        pestanas.setBackground(fondo);
+        pestanas.setForeground(TEXTO_OSCURO);
+    }
+
+    private static final class PestanasUI extends BasicTabbedPaneUI {
+
+        @Override
+        protected void paintTabBackground(Graphics g, int ubicacion, int indice,
+                                          int x, int y, int ancho, int alto, boolean seleccionada) {
+            int i = indice % PESTANA_BASE.length;
+            Color color = seleccionada ? mezclar(PESTANA_BASE[i], PESTANA_BORDE[i], 0.3) : PESTANA_BASE[i];
+            g.setColor(color);
+            g.fillRect(x + 1, y + 1, ancho - 2, alto - 1);
+        }
+
+        @Override
+        protected void paintTabBorder(Graphics g, int ubicacion, int indice,
+                                      int x, int y, int ancho, int alto, boolean seleccionada) {
+            if (ubicacion != TOP) {
+                super.paintTabBorder(g, ubicacion, indice, x, y, ancho, alto, seleccionada);
+                return;
+            }
+            g.setColor(PESTANA_BORDE[indice % PESTANA_BORDE.length]);
+            g.drawLine(x, y, x, y + alto - 1);                       // izquierda
+            g.drawLine(x, y, x + ancho - 1, y);                      // arriba
+            g.drawLine(x + ancho - 1, y, x + ancho - 1, y + alto - 1); // derecha
+        }
+    }
+
+    // ------------------------------------------------------------ Barra de menús
+
+    /**
+     * Barra de menús lila y desplegables claros con selección azul. Windows
+     * ignora esos colores, por eso se cambia SOLO el UI de la barra, de los
+     * desplegables y de sus opciones por la versión Basic.
+     */
+    private static void colorearBarraMenu(JMenuBar barra) {
+        if (!(barra.getUI() instanceof BarraMenuUI)) {
+            barra.setUI(new BarraMenuUI());
+        }
+        barra.setOpaque(true);
+        barra.setBackground(LILA);
+        for (int i = 0; i < barra.getMenuCount(); i++) {
+            JMenu menu = barra.getMenu(i);
+            if (menu == null) {
+                continue;
+            }
+            menu.setOpaque(false); // deja ver el lila de la barra
+            menu.setForeground(TEXTO_OSCURO);
+            JPopupMenu desplegable = menu.getPopupMenu();
+            if (!(desplegable.getUI() instanceof DesplegableUI)) {
+                desplegable.setUI(new DesplegableUI());
+            }
+            desplegable.setBackground(FONDO);
+            desplegable.setBorder(BorderFactory.createLineBorder(LILA_BORDE));
+            for (Component c : desplegable.getComponents()) {
+                if (c instanceof JMenuItem item && !(item instanceof JMenu)) {
+                    if (!(item.getUI() instanceof OpcionMenuUI)) {
+                        item.setUI(new OpcionMenuUI());
+                    }
+                    item.setOpaque(true);
+                    item.setBackground(FONDO);
+                    item.setForeground(TEXTO_OSCURO);
+                } else if (c instanceof JSeparator separador) {
+                    separador.setBackground(FONDO);
+                    separador.setForeground(LILA_BORDE);
+                }
+            }
+        }
+    }
+
+    private static final class BarraMenuUI extends BasicMenuBarUI {
+    }
+
+    private static final class DesplegableUI extends BasicPopupMenuUI {
+    }
+
+    /** Opción de menú con selección azul y texto oscuro. */
+    private static final class OpcionMenuUI extends BasicMenuItemUI {
+
+        @Override
+        protected void installDefaults() {
+            super.installDefaults();
+            selectionBackground = AZUL;
+            selectionForeground = TEXTO_OSCURO;
         }
     }
 
