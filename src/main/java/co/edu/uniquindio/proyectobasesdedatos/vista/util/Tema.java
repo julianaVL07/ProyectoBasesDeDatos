@@ -2,6 +2,7 @@ package co.edu.uniquindio.proyectobasesdedatos.vista.util;
 
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
+import javax.swing.ButtonModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -21,6 +22,8 @@ import javax.swing.border.CompoundBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicArrowButton;
+import javax.swing.plaf.basic.BasicButtonUI;
+import javax.swing.plaf.basic.BasicGraphicsUtils;
 import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
 import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
@@ -28,7 +31,11 @@ import javax.swing.text.JTextComponent;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.Insets;
+import java.awt.Rectangle;
 
 /**
  * Paleta pastel de la aplicación (la misma de los diagramas draw.io del
@@ -54,15 +61,20 @@ public final class Tema {
     public static final Color FONDO = new Color(0xF7F2FA);
     /** Texto oscuro para encabezados y selección. */
     public static final Color TEXTO = Color.BLACK;
-    /** Botón deshabilitado: gris neutro para que se note que no está disponible. */
-    public static final Color DESHABILITADO = new Color(0xF0F0F0);
+    /** Texto de botones y títulos de ventana. */
+    public static final Color TEXTO_OSCURO = new Color(0x333333);
+    /** Botón deshabilitado: gris claro con texto gris para que se note que no está disponible. */
+    public static final Color DESHABILITADO = new Color(0xEEEEEE);
     public static final Color DESHABILITADO_BORDE = new Color(0xC8C8C8);
+    public static final Color TEXTO_DESHABILITADO = new Color(0x9A9A9A);
 
     /** Propiedad de cliente para marcar componentes con un rol especial del tema. */
     private static final String ROL = "tema.rol";
     private static final String ROL_BARRA_ESTADO = "barraEstado";
     /** Marca de los botones ya configurados (para no repetir listeners). */
     private static final String BOTON_LISTO = "tema.botonListo";
+    /** Color de borde del botón (se usa para oscurecer el fondo al pasar el mouse). */
+    private static final String BOTON_BORDE = "tema.botonBorde";
 
     private Tema() {
     }
@@ -202,16 +214,21 @@ public final class Tema {
 
     /**
      * Pinta el botón según su texto. Windows ignora el fondo de los botones, por
-     * eso se apaga el relleno del Look and Feel y se pinta el fondo opaco con un
-     * borde de línea. El borde nuevo deja los mismos márgenes, así el tamaño no
-     * cambia. Si el botón se deshabilita o cambia de texto, se vuelve a pintar.
+     * eso se cambia SOLO el UI del botón por {@link BotonUI} (basado en
+     * BasicButtonUI), que rellena el fondo y lo oscurece al pasar el mouse. El
+     * borde nuevo deja los mismos márgenes que tenía, así el tamaño no cambia.
+     * Si el botón se deshabilita o cambia de texto, se vuelve a pintar.
      */
     private static void colorearBoton(JButton boton) {
         if (boton.getClientProperty(BOTON_LISTO) == null) {
+            // Márgenes del borde original, medidos antes de cambiar el UI.
             boton.putClientProperty(BOTON_LISTO, boton.getInsets());
+            boton.setUI(BOTON_UI);
             boton.setOpaque(true);
-            boton.setContentAreaFilled(false);
+            boton.setContentAreaFilled(true);
+            boton.setRolloverEnabled(true);
             boton.setFocusPainted(false);
+            boton.setForeground(TEXTO_OSCURO);
             boton.addPropertyChangeListener("enabled", e -> pintarBoton(boton));
             boton.addPropertyChangeListener(AbstractButton.TEXT_CHANGED_PROPERTY, e -> pintarBoton(boton));
         }
@@ -221,27 +238,93 @@ public final class Tema {
     private static void pintarBoton(JButton boton) {
         Color fondo;
         Color borde;
-        if (!boton.isEnabled()) {
-            fondo = DESHABILITADO;
-            borde = DESHABILITADO_BORDE;
-        } else {
-            String texto = boton.getText() == null ? "" : boton.getText().trim().toLowerCase();
-            if (texto.startsWith("eliminar") || texto.startsWith("quitar") || texto.startsWith("desactivar")) {
+        String texto = boton.getText() == null ? "" : boton.getText().trim().toLowerCase();
+        switch (texto) {
+            case "eliminar", "quitar", "desactivar" -> {
                 fondo = ROSA;
                 borde = ROSA_BORDE;
-            } else if (texto.startsWith("limpiar") || texto.startsWith("cancelar") || texto.equals("hoy")) {
+            }
+            case "limpiar", "cancelar", "hoy", "recargar", "actualizar listas" -> {
                 fondo = LILA;
                 borde = LILA_BORDE;
-            } else {
+            }
+            case "buscar", "ejecutar" -> {
+                fondo = AZUL;
+                borde = AZUL_BORDE;
+            }
+            default -> {
                 fondo = VERDE;
                 borde = VERDE_BORDE;
             }
         }
-        Insets m = (Insets) boton.getClientProperty(BOTON_LISTO);
+        boton.putClientProperty(BOTON_BORDE, borde);
         boton.setBackground(fondo);
+        Insets m = (Insets) boton.getClientProperty(BOTON_LISTO);
         boton.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(borde),
+                BorderFactory.createLineBorder(boton.isEnabled() ? borde : DESHABILITADO_BORDE),
                 BorderFactory.createEmptyBorder(Math.max(0, m.top - 1), Math.max(0, m.left - 1),
                         Math.max(0, m.bottom - 1), Math.max(0, m.right - 1))));
+        boton.repaint();
+    }
+
+    private static final BotonUI BOTON_UI = new BotonUI();
+
+    /**
+     * UI de botón que respeta los colores: rellena con el fondo del botón, un
+     * tono más oscuro al pasar el mouse o presionarlo, y gris si está
+     * deshabilitado (con el texto también gris).
+     */
+    private static final class BotonUI extends BasicButtonUI {
+
+        @Override
+        public void update(Graphics g, JComponent c) {
+            paint(g, c);
+        }
+
+        @Override
+        public void paint(Graphics g, JComponent c) {
+            AbstractButton b = (AbstractButton) c;
+            ButtonModel modelo = b.getModel();
+            Color base = b.getBackground();
+            Color borde = b.getClientProperty(BOTON_BORDE) instanceof Color cb ? cb : base.darker();
+            Color fondo;
+            if (!b.isEnabled()) {
+                fondo = DESHABILITADO;
+            } else if (modelo.isPressed() && modelo.isArmed()) {
+                fondo = mezclar(base, borde, 0.35);
+            } else if (modelo.isRollover()) {
+                fondo = mezclar(base, borde, 0.18);
+            } else {
+                fondo = base;
+            }
+            g.setColor(fondo);
+            g.fillRect(0, 0, c.getWidth(), c.getHeight());
+            super.paint(g, c);
+        }
+
+        /** El fondo de "presionado" ya lo pinta {@link #paint}. */
+        @Override
+        protected void paintButtonPressed(Graphics g, AbstractButton b) {
+        }
+
+        @Override
+        protected void paintText(Graphics g, AbstractButton b, Rectangle r, String texto) {
+            FontMetrics fm = b.getFontMetrics(b.getFont());
+            int desplazamiento = getTextShiftOffset();
+            g.setColor(b.isEnabled() ? b.getForeground() : TEXTO_DESHABILITADO);
+            BasicGraphicsUtils.drawStringUnderlineCharAt(b, (Graphics2D) g, texto,
+                    b.getDisplayedMnemonicIndex(), r.x + desplazamiento, r.y + fm.getAscent() + desplazamiento);
+        }
+    }
+
+    // --------------------------------------------------------------- Utilidades
+
+    /** Mezcla dos colores: {@code proporcion} 0 = solo {@code a}, 1 = solo {@code b}. */
+    static Color mezclar(Color a, Color b, double proporcion) {
+        double p = Math.max(0, Math.min(1, proporcion));
+        return new Color(
+                (int) Math.round(a.getRed() + (b.getRed() - a.getRed()) * p),
+                (int) Math.round(a.getGreen() + (b.getGreen() - a.getGreen()) * p),
+                (int) Math.round(a.getBlue() + (b.getBlue() - a.getBlue()) * p));
     }
 }
