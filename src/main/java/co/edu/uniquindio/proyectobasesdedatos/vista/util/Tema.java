@@ -39,6 +39,7 @@ import javax.swing.plaf.basic.BasicMenuBarUI;
 import javax.swing.plaf.basic.BasicMenuItemUI;
 import javax.swing.plaf.basic.BasicPopupMenuUI;
 import javax.swing.plaf.basic.BasicTabbedPaneUI;
+import javax.swing.plaf.metal.MetalIconFactory;
 import javax.swing.event.TableColumnModelEvent;
 import javax.swing.event.TableColumnModelListener;
 import javax.swing.table.JTableHeader;
@@ -49,11 +50,13 @@ import javax.swing.text.JTextComponent;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Insets;
+import java.awt.LayoutManager;
 import java.awt.Rectangle;
 
 /**
@@ -249,6 +252,19 @@ public final class Tema {
         }
     }
 
+    /** Tamaño de los íconos de la barra de título y de sus botones. */
+    private static final int ICONO_TITULO = 16;
+    private static final int BOTON_TITULO_ANCHO = 18;
+    private static final int BOTON_TITULO_ALTO = 18;
+    private static final int SEPARACION_BOTONES = 3;
+
+    /**
+     * Barra de título Basic con el color del módulo. Los íconos de Windows no
+     * encajan en la barra Basic (salen cortados), por eso se usan los de
+     * MetalIconFactory, y los botones tienen tamaño fijo, separados 3 px y
+     * alineados a la derecha. Las acciones (minimizar, maximizar/restaurar,
+     * cerrar) son las mismas de Swing.
+     */
     private static final class BarraTitulo extends BasicInternalFrameTitlePane {
 
         BarraTitulo(JInternalFrame ventana) {
@@ -263,6 +279,84 @@ public final class Tema {
             notSelectedTitleColor = mezclar(base, Color.WHITE, 0.45);
             selectedTextColor = TEXTO_OSCURO;
             notSelectedTextColor = TEXTO_OSCURO;
+            iconIcon = MetalIconFactory.getInternalFrameMinimizeIcon(ICONO_TITULO);
+            maxIcon = MetalIconFactory.getInternalFrameMaximizeIcon(ICONO_TITULO);
+            minIcon = MetalIconFactory.getInternalFrameAltMaximizeIcon(ICONO_TITULO);
+            closeIcon = MetalIconFactory.getInternalFrameCloseIcon(ICONO_TITULO);
+        }
+
+        @Override
+        protected void createButtons() {
+            super.createButtons();
+            for (JButton boton : new JButton[]{iconButton, maxButton, closeButton}) {
+                // Sin el relleno ni el borde del botón de Windows: solo el ícono.
+                boton.setContentAreaFilled(false);
+                boton.setBorderPainted(false);
+                boton.setOpaque(false);
+                boton.setBorder(BorderFactory.createEmptyBorder());
+                boton.setMargin(new Insets(0, 0, 0, 0));
+            }
+        }
+
+        @Override
+        protected LayoutManager createLayout() {
+            return new DistribucionBarra();
+        }
+
+        /** Coloca el ícono de la ventana a la izquierda y los botones a la derecha. */
+        private final class DistribucionBarra implements LayoutManager {
+
+            @Override
+            public void addLayoutComponent(String nombre, Component c) {
+            }
+
+            @Override
+            public void removeLayoutComponent(Component c) {
+            }
+
+            @Override
+            public Dimension preferredLayoutSize(Container c) {
+                return minimumLayoutSize(c);
+            }
+
+            @Override
+            public Dimension minimumLayoutSize(Container c) {
+                int alto = Math.max(getFontMetrics(getFont()).getHeight() + 6, BOTON_TITULO_ALTO + 6);
+                int ancho = 2 + ICONO_TITULO + 4 + 3 * (BOTON_TITULO_ANCHO + SEPARACION_BOTONES) + 4;
+                return new Dimension(ancho, alto);
+            }
+
+            @Override
+            public void layoutContainer(Container c) {
+                int ancho = c.getWidth();
+                int alto = c.getHeight();
+                if (menuBar != null) {
+                    menuBar.setBounds(4, (alto - ICONO_TITULO) / 2, ICONO_TITULO, ICONO_TITULO);
+                }
+                int y = (alto - BOTON_TITULO_ALTO) / 2;
+                int x = ancho - 4;
+                // De derecha a izquierda: cerrar, maximizar, minimizar.
+                if (frame.isClosable()) {
+                    x -= BOTON_TITULO_ANCHO;
+                    closeButton.setBounds(x, y, BOTON_TITULO_ANCHO, BOTON_TITULO_ALTO);
+                    x -= SEPARACION_BOTONES;
+                } else {
+                    closeButton.setBounds(0, 0, 0, 0);
+                }
+                if (frame.isMaximizable()) {
+                    x -= BOTON_TITULO_ANCHO;
+                    maxButton.setBounds(x, y, BOTON_TITULO_ANCHO, BOTON_TITULO_ALTO);
+                    x -= SEPARACION_BOTONES;
+                } else {
+                    maxButton.setBounds(0, 0, 0, 0);
+                }
+                if (frame.isIconifiable()) {
+                    x -= BOTON_TITULO_ANCHO;
+                    iconButton.setBounds(x, y, BOTON_TITULO_ANCHO, BOTON_TITULO_ALTO);
+                } else {
+                    iconButton.setBounds(0, 0, 0, 0);
+                }
+            }
         }
     }
 
