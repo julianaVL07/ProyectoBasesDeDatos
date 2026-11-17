@@ -2,6 +2,7 @@ package co.edu.uniquindio.proyectobasesdedatos.vista;
 
 import co.edu.uniquindio.proyectobasesdedatos.controlador.ControladorException;
 import co.edu.uniquindio.proyectobasesdedatos.controlador.LoginControlador;
+import co.edu.uniquindio.proyectobasesdedatos.vista.util.Tema;
 import co.edu.uniquindio.proyectobasesdedatos.vista.util.UtilVista;
 
 import javax.swing.BorderFactory;
@@ -57,6 +58,7 @@ public class VentanaLogin extends JDialog {
         btnCancelar.addActionListener(e -> dispose());
         getRootPane().setDefaultButton(btnIngresar); // Enter = Ingresar
 
+        Tema.aplicar(this);
         pack();
         setLocationRelativeTo(null);
     }

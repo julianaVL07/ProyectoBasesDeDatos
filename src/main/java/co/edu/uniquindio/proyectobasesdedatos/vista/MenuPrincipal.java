@@ -16,6 +16,7 @@ import co.edu.uniquindio.proyectobasesdedatos.vista.entidades.VentanaProductos;
 import co.edu.uniquindio.proyectobasesdedatos.vista.entidades.VentanaProveedores;
 import co.edu.uniquindio.proyectobasesdedatos.vista.reportes.VentanaReportes;
 import co.edu.uniquindio.proyectobasesdedatos.vista.transacciones.VentanaSuministros;
+import co.edu.uniquindio.proyectobasesdedatos.vista.util.Tema;
 import co.edu.uniquindio.proyectobasesdedatos.vista.util.UtilVista;
 
 import javax.swing.BorderFactory;
@@ -29,7 +30,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.event.WindowAdapter;
@@ -72,13 +72,14 @@ public class MenuPrincipal extends JFrame {
         setSize(1200, 750);
         setLocationRelativeTo(null);
 
-        escritorio.setBackground(new Color(236, 240, 245));
+        escritorio.setBackground(Tema.LILA);
 
         setJMenuBar(crearBarraMenu());
         getContentPane().setLayout(new BorderLayout());
         getContentPane().add(escritorio, BorderLayout.CENTER);
         getContentPane().add(crearBarraEstado(), BorderLayout.SOUTH);
         actualizarBarraEstado();
+        Tema.aplicar(this);
     }
 
     // ------------------------------------------------------------------ Menús
@@ -150,7 +151,8 @@ public class MenuPrincipal extends JFrame {
 
     private JPanel crearBarraEstado() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 4));
-        panel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Color.LIGHT_GRAY));
+        panel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Tema.AZUL_BORDE));
+        Tema.marcarBarraEstado(panel);
         panel.add(lblEstado);
         return panel;
     }
@@ -196,6 +198,7 @@ public class MenuPrincipal extends JFrame {
                 return;
             }
         }
+        Tema.aplicar(ventana);
         escritorio.add(ventana);
         if (ventana.getWidth() == 0 || ventana.getHeight() == 0) {
             ventana.pack();

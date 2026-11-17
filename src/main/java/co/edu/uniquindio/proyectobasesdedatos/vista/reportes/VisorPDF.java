@@ -1,5 +1,6 @@
 package co.edu.uniquindio.proyectobasesdedatos.vista.reportes;
 
+import co.edu.uniquindio.proyectobasesdedatos.vista.util.Tema;
 import co.edu.uniquindio.proyectobasesdedatos.vista.util.UtilVista;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -16,7 +17,6 @@ import javax.swing.SwingConstants;
 import javax.swing.event.InternalFrameAdapter;
 import javax.swing.event.InternalFrameEvent;
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Desktop;
 import java.awt.FlowLayout;
@@ -72,7 +72,7 @@ public class VisorPDF extends JInternalFrame {
 
         lblImagen.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         JScrollPane scroll = new JScrollPane(lblImagen);
-        scroll.getViewport().setBackground(new Color(128, 128, 128));
+        scroll.getViewport().setBackground(Tema.LILA_BORDE);
         scroll.getVerticalScrollBar().setUnitIncrement(20);
         scroll.getHorizontalScrollBar().setUnitIncrement(20);
         getContentPane().add(scroll, BorderLayout.CENTER);
