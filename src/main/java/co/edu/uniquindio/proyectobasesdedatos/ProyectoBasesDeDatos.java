@@ -5,6 +5,7 @@ import co.edu.uniquindio.proyectobasesdedatos.controlador.ControladorException;
 import co.edu.uniquindio.proyectobasesdedatos.controlador.LoginControlador;
 import co.edu.uniquindio.proyectobasesdedatos.vista.MenuPrincipal;
 import co.edu.uniquindio.proyectobasesdedatos.vista.VentanaLogin;
+import co.edu.uniquindio.proyectobasesdedatos.vista.util.Tema;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
@@ -23,6 +24,7 @@ public class ProyectoBasesDeDatos {
 
     public static void main(String[] args) {
         usarLookAndFeelDelSistema();
+        Tema.aplicarFuente();
         registrarSalidaAlTerminar();
 
         // Toda la interfaz Swing se crea en el hilo de eventos (EDT).

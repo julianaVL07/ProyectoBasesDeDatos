@@ -10,6 +10,7 @@ import co.edu.uniquindio.proyectobasesdedatos.modelo.dto.CategoriaDTO;
 import co.edu.uniquindio.proyectobasesdedatos.modelo.dto.CiudadDTO;
 import co.edu.uniquindio.proyectobasesdedatos.modelo.dto.DepartamentoDTO;
 import co.edu.uniquindio.proyectobasesdedatos.modelo.dto.ProveedorDTO;
+import co.edu.uniquindio.proyectobasesdedatos.vista.util.Tema;
 import co.edu.uniquindio.proyectobasesdedatos.vista.util.UtilVista;
 
 import javax.swing.BorderFactory;
@@ -357,6 +358,7 @@ public class VentanaReportes extends JInternalFrame {
         }
         try {
             VisorPDF visor = new VisorPDF(archivo);
+            Tema.aplicar(visor);
             escritorio.add(visor);
             UtilVista.centrar(visor, escritorio);
             visor.setVisible(true);
