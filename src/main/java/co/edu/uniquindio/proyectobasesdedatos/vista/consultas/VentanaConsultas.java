@@ -4,6 +4,7 @@ import co.edu.uniquindio.proyectobasesdedatos.controlador.ConsultaControlador;
 import co.edu.uniquindio.proyectobasesdedatos.controlador.ConsultaControlador.Consulta;
 import co.edu.uniquindio.proyectobasesdedatos.controlador.ControladorException;
 import co.edu.uniquindio.proyectobasesdedatos.modelo.dto.ResultadoConsulta;
+import co.edu.uniquindio.proyectobasesdedatos.vista.util.Tema;
 import co.edu.uniquindio.proyectobasesdedatos.vista.util.UtilVista;
 
 import javax.swing.BorderFactory;
@@ -16,7 +17,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
-import javax.swing.UIManager;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.BorderLayout;
@@ -79,7 +79,7 @@ public class VentanaConsultas extends JInternalFrame {
         txtDescripcion.setEditable(false);
         txtDescripcion.setLineWrap(true);
         txtDescripcion.setWrapStyleWord(true);
-        txtDescripcion.setBackground(UIManager.getColor("Panel.background"));
+        txtDescripcion.setBackground(Tema.FONDO);
         txtDescripcion.setBorder(BorderFactory.createTitledBorder("Descripción"));
         panel.add(txtDescripcion, BorderLayout.CENTER);
         return panel;
